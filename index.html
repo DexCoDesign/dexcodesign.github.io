@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="DexCoDesign research project page." />
   <title>DexCoDesign</title>
-  <link rel="stylesheet" href="assets/css/styles.css?v=20261009" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261011b" />
 </head>
 <body>
   <nav class="site-nav" aria-label="Main navigation">
@@ -112,22 +112,44 @@
           <h2>Video Demonstrations</h2>
         </div>
       </div>
-      <p class="section-intro">Replace each card with a looping, muted MP4 from <code>assets/videos/demos/</code>.</p>
+      <p class="section-intro">
+        44 successful training rollouts across three datasets. Scroll the gallery to browse; videos load only after you click a thumbnail, and opening a new one unloads the previous video.
+      </p>
 
-      <div class="video-grid">
-        <article class="demo-card">
-          <!-- Example: <video src="assets/videos/demos/demo-01.mp4" autoplay muted loop playsinline></video> -->
-          <div class="media-placeholder media-placeholder--video"><span>16:9 Video 01</span></div>
-          <div class="demo-copy"><h3>[Demo Title]</h3><p>[Short description of the task and result.]</p></div>
-        </article>
-        <article class="demo-card">
-          <div class="media-placeholder media-placeholder--video"><span>16:9 Video 02</span></div>
-          <div class="demo-copy"><h3>[Demo Title]</h3><p>[Short description of the task and result.]</p></div>
-        </article>
-        <article class="demo-card">
-          <div class="media-placeholder media-placeholder--video"><span>16:9 Video 03</span></div>
-          <div class="demo-copy"><h3>[Demo Title]</h3><p>[Short description of the task and result.]</p></div>
-        </article>
+      <div class="video-toolbar" aria-label="Filter video demonstrations">
+        <div class="video-filters" role="group" aria-label="Dataset filters">
+          <button class="filter-button is-active" type="button" data-video-filter="all">All <span>44</span></button>
+          <button class="filter-button" type="button" data-video-filter="taco">TACO <span>35</span></button>
+          <button class="filter-button" type="button" data-video-filter="hocap">HOCAP <span>7</span></button>
+          <button class="filter-button" type="button" data-video-filter="penspin">PenSpin <span>2</span></button>
+        </div>
+        <p class="video-status" id="video-status" aria-live="polite">Showing all 44 videos · none loaded</p>
+      </div>
+
+      <div class="video-grid" id="training-gallery"></div>
+
+      <div class="coming-soon-block">
+        <div class="coming-soon-heading">
+          <p class="eyebrow eyebrow--dark">In Progress</p>
+          <h3>More datasets are on the way</h3>
+        </div>
+        <div class="coming-soon-grid">
+          <article class="dataset-placeholder">
+            <span>Coming soon</span>
+            <h4>OakInk2</h4>
+            <p>Training demonstrations in progress.</p>
+          </article>
+          <article class="dataset-placeholder">
+            <span>Coming soon</span>
+            <h4>ARCTIC</h4>
+            <p>Training demonstrations in progress.</p>
+          </article>
+          <article class="dataset-placeholder">
+            <span>Coming soon</span>
+            <h4>DexterHand</h4>
+            <p>Training demonstrations in progress.</p>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -168,6 +190,7 @@
     <p>DexCoDesign · Research project page template</p>
   </footer>
 
-  <script src="assets/js/main.js?v=20261009"></script>
+  <script src="assets/js/video-manifest.js?v=20261011b"></script>
+  <script src="assets/js/main.js?v=20261011b"></script>
 </body>
 </html>
