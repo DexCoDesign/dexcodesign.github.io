@@ -20,11 +20,28 @@ const gallery = document.querySelector('#training-gallery');
 const status = document.querySelector('#video-status');
 const filterButtons = [...document.querySelectorAll('[data-video-filter]')];
 const videos = window.DEXCODESIGN_VIDEOS || [];
-const datasetNames = { taco: 'TACO', hocap: 'HOCAP', penspin: 'PenSpin' };
+const datasetNames = {
+  taco: 'TACO',
+  hocap: 'HOCAP',
+  penspin: 'PenSpin',
+  oakink2: 'OakInk2',
+  arctic: 'ARCTIC',
+  dexterhand: 'DexterHand'
+};
+const pendingDatasets = ['oakink2', 'arctic', 'dexterhand'];
 
 let activeCard = null;
-let activeFilter = 'all';
+let activeFilter = 'taco';
 let galleryResizeFrame = null;
+const thumbnailObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting || entry.target.closest('.demo-card')?.hidden) return;
+        entry.target.src = entry.target.dataset.src;
+        observer.unobserve(entry.target);
+      });
+    }, { root: gallery, rootMargin: '360px 0px' })
+  : null;
 
 const titleFor = (item) => `${datasetNames[item.dataset]} · ${item.sample}`;
 const thumbnailFor = (item) => `assets/images/thumbnails/${item.dataset}/${item.file.replace(/\.mp4$/, '.jpg')}`;
@@ -37,7 +54,7 @@ const launchButtonFor = (item, card) => {
 
   const thumbnail = document.createElement('img');
   thumbnail.className = 'video-thumbnail';
-  thumbnail.src = thumbnailFor(item);
+  thumbnail.dataset.src = thumbnailFor(item);
   thumbnail.alt = '';
   thumbnail.loading = 'lazy';
   thumbnail.decoding = 'async';
@@ -58,11 +75,10 @@ const launchButtonFor = (item, card) => {
 
 const updateStatus = () => {
   if (!status) return;
-  const visibleCount = activeFilter === 'all'
-    ? videos.length
-    : videos.filter((item) => item.dataset === activeFilter).length;
-  const scope = activeFilter === 'all' ? `all ${visibleCount}` : `${visibleCount} ${datasetNames[activeFilter]}`;
-  status.textContent = `Showing ${scope} videos · ${activeCard ? '1 video loaded' : 'none loaded'}`;
+  const visibleCount = videos.filter((item) => item.dataset === activeFilter).length;
+  status.textContent = visibleCount
+    ? `Showing ${visibleCount} ${datasetNames[activeFilter]} videos · ${activeCard ? '1 video loaded' : 'none loaded'}`
+    : `${datasetNames[activeFilter]} demonstrations · coming soon`;
 };
 
 const updateGalleryHeight = () => {
@@ -86,6 +102,12 @@ const scheduleGalleryHeight = () => {
   galleryResizeFrame = requestAnimationFrame(updateGalleryHeight);
 };
 
+const queueThumbnail = (thumbnail) => {
+  if (!thumbnail || thumbnail.hasAttribute('src')) return;
+  if (thumbnailObserver) thumbnailObserver.observe(thumbnail);
+  else thumbnail.src = thumbnail.dataset.src;
+};
+
 const unloadVideo = () => {
   if (!activeCard) return;
   const item = activeCard.videoItem;
@@ -98,7 +120,9 @@ const unloadVideo = () => {
     video.load();
   }
 
-  media?.replaceChildren(launchButtonFor(item, activeCard));
+  const launchButton = launchButtonFor(item, activeCard);
+  media?.replaceChildren(launchButton);
+  if (!activeCard.hidden) queueThumbnail(launchButton.querySelector('.video-thumbnail'));
   activeCard = null;
 };
 
@@ -153,6 +177,35 @@ const renderGallery = () => {
     card.append(media, copy);
     gallery.append(card);
   });
+
+  pendingDatasets.forEach((dataset) => {
+    const card = document.createElement('article');
+    card.className = 'dataset-placeholder dataset-placeholder--gallery';
+    card.dataset.dataset = dataset;
+
+    const badge = document.createElement('span');
+    badge.textContent = 'Coming soon';
+    const title = document.createElement('h4');
+    title.textContent = datasetNames[dataset];
+    const copy = document.createElement('p');
+    copy.textContent = 'Training demonstrations are in progress.';
+
+    card.append(badge, title, copy);
+    gallery.append(card);
+  });
+};
+
+const applyFilter = () => {
+  [...gallery.children].forEach((card) => {
+    card.hidden = card.dataset.dataset !== activeFilter;
+  });
+
+  thumbnailObserver?.disconnect();
+  gallery.querySelectorAll('.demo-card:not([hidden]) .video-thumbnail:not([src])').forEach(queueThumbnail);
+
+  if (activeCard?.hidden) unloadVideo();
+  updateStatus();
+  scheduleGalleryHeight();
 };
 
 filterButtons.forEach((button) => {
@@ -160,17 +213,10 @@ filterButtons.forEach((button) => {
     activeFilter = button.dataset.videoFilter;
     filterButtons.forEach((candidate) => candidate.classList.toggle('is-active', candidate === button));
 
-    [...gallery.children].forEach((card) => {
-      card.hidden = activeFilter !== 'all' && card.dataset.dataset !== activeFilter;
-    });
-
-    if (activeCard?.hidden) unloadVideo();
-    updateStatus();
-    scheduleGalleryHeight();
+    applyFilter();
   });
 });
 
 renderGallery();
-updateStatus();
-scheduleGalleryHeight();
+applyFilter();
 window.addEventListener('resize', scheduleGalleryHeight, { passive: true });
