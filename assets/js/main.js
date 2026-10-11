@@ -200,12 +200,12 @@ const applyFilter = () => {
     card.hidden = card.dataset.dataset !== activeFilter;
   });
 
-  thumbnailObserver?.disconnect();
-  gallery.querySelectorAll('.demo-card:not([hidden]) .video-thumbnail:not([src])').forEach(queueThumbnail);
-
   if (activeCard?.hidden) unloadVideo();
   updateStatus();
-  scheduleGalleryHeight();
+  updateGalleryHeight();
+
+  thumbnailObserver?.disconnect();
+  gallery.querySelectorAll('.demo-card:not([hidden]) .video-thumbnail:not([src])').forEach(queueThumbnail);
 };
 
 filterButtons.forEach((button) => {
