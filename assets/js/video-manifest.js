@@ -106,6 +106,10 @@ window.DEXCODESIGN_VIDEOS = [
   { dataset: 'arctic', sample: "064 \u00b7 Scissors (s09)", hand: 'Both', file: 'arctic_064_scissors_s09.mp4' },
   { dataset: 'arctic', sample: "086 \u00b7 Scissors (s08)", hand: 'Both', file: 'arctic_086_scissors_s08.mp4' },
   { dataset: 'arctic', sample: "090 \u00b7 Espresso machine (s09)", hand: 'Both', file: 'arctic_090_espressomachine_s09.mp4' },
+  { dataset: 'dexterhand', sample: "Cuboid 00", hand: 'Left', file: 'dexterhand_Cuboid_00.mp4' },
+  { dataset: 'dexterhand', sample: "Cuboid 01", hand: 'Left', file: 'dexterhand_Cuboid_01.mp4' },
+  { dataset: 'dexterhand', sample: "Cuboid 02", hand: 'Left', file: 'dexterhand_Cuboid_02.mp4' },
+  { dataset: 'dexterhand', sample: "Ring 00", hand: 'Left', file: 'dexterhand_Ring_00.mp4' },
   { dataset: 'supp', sample: "PenSpin 000", hand: 'Right', file: 'supp_penspin_000_right.mp4' },
   { dataset: 'supp', sample: "PenSpin 004", hand: 'Right', file: 'supp_penspin_004_right.mp4' },
   { dataset: 'supp', sample: "Reorientation 000", hand: 'Right', file: 'supp_reorientation_000_right.mp4' }

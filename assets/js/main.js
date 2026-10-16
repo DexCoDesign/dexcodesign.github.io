@@ -28,7 +28,7 @@ const datasetNames = {
   supp: 'Supp',
   dexterhand: 'DexterHand'
 };
-const pendingDatasets = ['dexterhand'];
+const pendingDatasets = [];
 
 let activeCard = null;
 let activeFilter = 'taco';
