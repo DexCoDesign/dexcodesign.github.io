@@ -20,6 +20,9 @@ const gallery = document.querySelector('#training-gallery');
 const status = document.querySelector('#video-status');
 const filterButtons = [...document.querySelectorAll('[data-video-filter]')];
 const videos = window.DEXCODESIGN_VIDEOS || [];
+const benchmarkVideos = new Set(
+  (window.DEXCODESIGN_BENCHMARK?.records || []).map((item) => `${item.dataset}/${item.file}`)
+);
 const datasetNames = {
   taco: 'TACO',
   hocap: 'HOCAP',
@@ -174,6 +177,16 @@ const renderGallery = () => {
     meta.append(tag, hand);
 
     copy.append(title, meta);
+    if (benchmarkVideos.has(`${item.dataset}/${item.file}`)) {
+      card.dataset.benchmark = 'true';
+      const benchmark = document.createElement('p');
+      benchmark.className = 'benchmark-label';
+      const marker = document.createElement('span');
+      marker.className = 'benchmark-label-dot';
+      marker.setAttribute('aria-hidden', 'true');
+      benchmark.append(marker, document.createTextNode('Benchmark selection'));
+      copy.append(benchmark);
+    }
     card.append(media, copy);
     gallery.append(card);
   });

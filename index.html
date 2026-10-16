@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="DexCoDesign research project page." />
   <title>DexCoDesign</title>
-  <link rel="stylesheet" href="assets/css/styles.css?v=20261016c" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261016-benchmark" />
 </head>
 <body>
   <nav class="site-nav" aria-label="Main navigation">
@@ -180,6 +180,14 @@
         Successful MANO training rollouts on 114 reviewed clips from six datasets (ARCTIC with both hands, joint error below 0.4 rad; DexterHand held in the air, within 3 cm and 0.8 rad of the demonstration), replayed in Isaac Sim from the captured training states. Scroll to browse; videos load only after you click a thumbnail.
       </p>
 
+      <aside class="benchmark-notice" aria-labelledby="benchmark-heading">
+        <span class="benchmark-notice-dot" aria-hidden="true"></span>
+        <div>
+          <h3 id="benchmark-heading">Selected for the benchmark <span>25 demos</span></h3>
+          <p>A diversity-focused subset covering all six datasets, including PenSpin. Selected videos are marked below.</p>
+        </div>
+      </aside>
+
       <div class="video-toolbar" aria-label="Filter video demonstrations">
         <div class="video-filters" role="group" aria-label="Dataset filters">
           <button class="filter-button is-active" type="button" data-video-filter="taco">TACO <span>33</span></button>
@@ -233,6 +241,7 @@
   </footer>
 
   <script src="assets/js/video-manifest.js?v=20261016c"></script>
-  <script src="assets/js/main.js?v=20261016c"></script>
+  <script src="assets/js/benchmark-manifest.js?v=20261016-benchmark"></script>
+  <script src="assets/js/main.js?v=20261016-benchmark"></script>
 </body>
 </html>
