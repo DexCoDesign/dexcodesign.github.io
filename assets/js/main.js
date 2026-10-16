@@ -23,12 +23,12 @@ const videos = window.DEXCODESIGN_VIDEOS || [];
 const datasetNames = {
   taco: 'TACO',
   hocap: 'HOCAP',
-  penspin: 'PenSpin',
   oakink2: 'OakInk2',
   arctic: 'ARCTIC',
+  supp: 'Supp',
   dexterhand: 'DexterHand'
 };
-const pendingDatasets = ['oakink2', 'arctic', 'dexterhand'];
+const pendingDatasets = ['dexterhand'];
 
 let activeCard = null;
 let activeFilter = 'taco';
@@ -170,7 +170,7 @@ const renderGallery = () => {
     tag.className = 'dataset-tag';
     tag.textContent = datasetNames[item.dataset];
     const hand = document.createElement('span');
-    hand.textContent = `${item.hand} hand · successful rollout`;
+    hand.textContent = `${item.hand === 'Both' ? 'Both hands' : `${item.hand} hand`} · successful rollout`;
     meta.append(tag, hand);
 
     copy.append(title, meta);
