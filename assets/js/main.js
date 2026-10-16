@@ -174,19 +174,17 @@ const renderGallery = () => {
     tag.textContent = datasetNames[item.dataset];
     const hand = document.createElement('span');
     hand.textContent = `${item.hand === 'Both' ? 'Both hands' : `${item.hand} hand`} · successful rollout`;
-    meta.append(tag, hand);
-
-    copy.append(title, meta);
+    meta.append(tag);
     if (benchmarkVideos.has(`${item.dataset}/${item.file}`)) {
       card.dataset.benchmark = 'true';
-      const benchmark = document.createElement('p');
-      benchmark.className = 'benchmark-label';
-      const marker = document.createElement('span');
-      marker.className = 'benchmark-label-dot';
-      marker.setAttribute('aria-hidden', 'true');
-      benchmark.append(marker, document.createTextNode('Benchmark selection'));
-      copy.append(benchmark);
+      const benchmark = document.createElement('span');
+      benchmark.className = 'benchmark-marker';
+      benchmark.textContent = 'Benchmark';
+      benchmark.title = 'Selected for the benchmark';
+      meta.append(benchmark);
     }
+    meta.append(hand);
+    copy.append(title, meta);
     card.append(media, copy);
     gallery.append(card);
   });
