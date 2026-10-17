@@ -28,7 +28,7 @@ const datasetNames = {
   hocap: 'HOCAP',
   oakink2: 'OakInk2',
   arctic: 'ARCTIC',
-  supp: 'Supp',
+  supp: 'PenSpin',
   dexterhand: 'DexterHand'
 };
 const pendingDatasets = [];
