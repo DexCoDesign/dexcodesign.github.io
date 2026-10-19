@@ -18,8 +18,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.waitForTimeout(250);
   const controls=page.locator('#studio-controls input');if(await controls.count()!==record.counts.active)throw new Error('Control count mismatch '+record.id);
   await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'.png')});
-  const pose=page.locator('#studio-actions button').filter({hasText:record.category==='ai'?'Pinch':'Flex'});
-  await pose.click();await page.waitForTimeout(650);
+  const expected=record.category==='others'?['Neutral','Flex']:['Neutral','Spread','Wrap','Pinch'];
+  const names=await page.locator('#studio-actions button[data-pose]').allTextContents();
+  if(JSON.stringify(names)!==JSON.stringify(expected))throw new Error('Pose buttons mismatch '+record.id+': '+names);
+  for(const name of expected){
+   await page.getByRole('button',{name,exact:true}).click();
+   if(!await page.getByRole('button',{name,exact:true}).evaluate(el=>el.classList.contains('on')))throw new Error('Pose did not activate '+record.id+' '+name);
+  }
+  await page.waitForTimeout(650);
   await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'-pose.png')});
   await page.getByRole('button',{name:'Neutral',exact:true}).click();
   const first=controls.first();await first.focus();await first.press('ArrowRight');
