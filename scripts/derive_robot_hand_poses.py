@@ -6,6 +6,7 @@ lateral joints; pinch minimizes the thumb/index tip separation while leaving
 every other finger at neutral. No source URDF or mesh is modified.
 """
 import json
+import argparse
 import re
 from pathlib import Path
 
@@ -79,6 +80,19 @@ class KinematicModel:
             self.tips[digit] = (node, self._local_tip(node, link))
         self.paths = {digit: self._path(node) for digit, (node, _) in self.tips.items()}
 
+    def close_preview_loops(self, q):
+        """Constrain MIDAS display joints using the original MJCF four-bars."""
+        curves = self.data.get("closed_loop_preview", {}).get("fingers")
+        if not curves:
+            return q
+        result = dict(q)
+        for finger, rows in curves.items():
+            pip = np.clip(result[f"{finger}_pip_joint"], rows[-1][0], rows[0][0])
+            rows = np.asarray(rows)
+            result[f"{finger}_dip_joint"] = float(np.interp(pip, rows[::-1, 0], rows[::-1, 1]))
+            result[f"{finger}_dip_linkage_joint"] = float(np.interp(pip, rows[::-1, 0], rows[::-1, 2]))
+        return result
+
     def _path(self, node):
         result = []
         while node in self.parent:
@@ -106,6 +120,7 @@ class KinematicModel:
         return vertices[np.argmax(np.linalg.norm(vertices, axis=1))]
 
     def tip(self, digit, q):
+        q = self.close_preview_loops(q)
         node, point = self.tips[digit]
         matrix = np.eye(4)
         for child in self.paths[digit]:
@@ -144,8 +159,24 @@ def derive(model):
                 return np.linalg.norm(model.tip(digit, pose)-model.tip(reference, pose))
             spread[name] = max(candidates, key=separation)
 
+    if model.id == "wuji_hand_2":
+        # A pairwise-distance maximum picked the *inward* pinky extreme:
+        # it crossed the ring finger despite increasing their 3-D tip gap.
+        # On the right hand, positive MCP abduction moves the little tip
+        # outward (toward negative world X). Give the ring less abduction
+        # than the little finger so *every* adjacent fingertip gap grows.
+        for name, fraction in (("r_ring_finger_mcp_abd", .42),
+                               ("r_pinky_mcp_abd", .72)):
+            control = next(c for c in model.controls if c["name"] == name)
+            spread[name] = q0[name] + fraction * (control["upper"] - q0[name])
+        digits = ("index", "middle", "ring", "little")
+        tips = [model.tip(digit, spread)[0] for digit in digits]
+        baseline = [model.tip(digit, q0)[0] for digit in digits]
+        assert all(a-b > a0-b0 for a,b,a0,b0 in zip(tips,tips[1:],baseline,baseline[1:])), (tips, baseline)
+
     selected = [c for c in model.controls if finger(model.id, c["name"]) in {"thumb", "index"}
-                and "linkage" not in c["name"].lower()]
+                and "linkage" not in c["name"].lower()
+                and not (model.id == "midas_hand" and c["name"] == "index_dip_joint")]
     x0 = np.array([q0[c["name"]] for c in selected])
     bounds = [(c["lower"], c["upper"]) for c in selected]
     def objective(values):
@@ -158,13 +189,13 @@ def derive(model):
         return gap + .004 * reg
     result = differential_evolution(objective, bounds, seed=23, maxiter=60,
                                     popsize=5, polish=True, tol=.001)
-    pinch = {**q0, **{c["name"]: float(value) for c, value in zip(selected, result.x)}}
+    pinch = model.close_preview_loops({**q0, **{c["name"]: float(value) for c, value in zip(selected, result.x)}})
     neutral_gap = float(np.linalg.norm(model.tip("thumb", q0)-model.tip("index", q0)))
     pinch_gap = float(np.linalg.norm(model.tip("thumb", pinch)-model.tip("index", pinch)))
     assert pinch_gap < neutral_gap, (model.id, neutral_gap, pinch_gap)
     # A wrap preview can use the source's existing flex pose; do not reuse it
     # for Spread or Pinch, where opposite-sign limits are common.
-    wrap = dict(model.data["poses"]["flex"])
+    wrap = model.close_preview_loops(dict(model.data["poses"]["flex"]))
     return {"spread": spread, "wrap": wrap, "pinch": pinch}, {
         "neutral_tip_gap_m": neutral_gap, "pinch_tip_gap_m": pinch_gap,
         "spread_lateral_joints": [c["name"] for c in model.controls
@@ -173,18 +204,26 @@ def derive(model):
 
 
 def main():
-    profiles, audit = {}, {}
-    for model_id in TIPS:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-id", choices=TIPS)
+    args = parser.parse_args()
+    profile_path = MODELS / "robot_pose_profiles.json"
+    audit_path = MODELS / "robot_pose_audit.json"
+    profiles = json.loads(profile_path.read_text()) if args.model_id and profile_path.exists() else {}
+    audit = json.loads(audit_path.read_text()) if args.model_id and audit_path.exists() else {}
+    for model_id in ([args.model_id] if args.model_id else TIPS):
         model = KinematicModel(model_id)
         poses, checks = derive(model)
         profiles[model_id] = poses
         audit[model_id] = checks
         print(model_id, checks, flush=True)
         model.data["poses"].update(poses)
+        if model_id == "midas_hand":
+            model.data["poses"]["flex"] = model.close_preview_loops(model.data["poses"]["flex"])
         model.data["pinch_note"] = "Thumb/index tip-alignment preview; force closure and contact are not validated."
         (MODELS / f"{model_id}.json").write_text(json.dumps(model.data, separators=(",", ":")) + "\n")
-    (MODELS / "robot_pose_profiles.json").write_text(json.dumps(profiles, indent=2) + "\n")
-    (MODELS / "robot_pose_audit.json").write_text(json.dumps(audit, indent=2) + "\n")
+    profile_path.write_text(json.dumps(profiles, indent=2) + "\n")
+    audit_path.write_text(json.dumps(audit, indent=2) + "\n")
 
 
 if __name__ == "__main__":

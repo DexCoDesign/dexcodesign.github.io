@@ -83,17 +83,17 @@
       "thumb_pip_flex": 48
     },
     "pinch": {
-      "index_mcp_flex": 53,
+      "index_mcp_flex": 14.076863127398807,
       "middle_mcp_flex": 12,
       "ring_mcp_flex": 12,
-      "index_pip_flex": 2,
+      "index_pip_flex": 56.95801930262242,
       "middle_pip_flex": 12,
       "ring_pip_flex": 12,
-      "thumb_base_sweep": 38,
-      "thumb_mcp_flex": 0,
-      "thumb_pip_flex": 17
+      "thumb_base_sweep": 38.73207225775394,
+      "thumb_mcp_flex": 1.6586947003704133,
+      "thumb_pip_flex": 4.423526428671402
     }
   },
   "pinch_note": "The thumb and index fingertip converge in the nine-axis preview; grasp forces and force closure are not validated.",
-  "concept_note": "Compact asymmetric four-digit right-hand gripper \u00b7 three two-link fingers \u00b7 palm-integrated Z-axis thumb bearing with a short radial support, proportionate proximal/distal links and the same fitted fingertip pad profile as the fingers \u00b7 nine enclosed direct-drive axes \u00b7 no passive joints."
+  "concept_note": "Compact asymmetric four-digit right-hand gripper \u00b7 three two-link fingers \u00b7 recessed palm-integrated Z-axis thumb bearing \u00b7 full-size thumb links and inward-facing tip pad \u00b7 nine enclosed direct-drive axes \u00b7 no passive joints."
 }

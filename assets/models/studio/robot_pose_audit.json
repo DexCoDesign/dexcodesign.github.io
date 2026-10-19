@@ -52,7 +52,7 @@
   },
   "midas_hand": {
     "neutral_tip_gap_m": 0.13300943105164212,
-    "pinch_tip_gap_m": 3.1710270376225014e-09,
+    "pinch_tip_gap_m": 9.991019347997925e-10,
     "spread_lateral_joints": [
       "thumb_cmc_side_joint",
       "index_mcp_abad_joint",

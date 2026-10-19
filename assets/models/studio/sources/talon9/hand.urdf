@@ -33,7 +33,7 @@
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0.018 0.024 0.023" rpy="0 0 0" />
+      <origin xyz="0.018 0.014 0.011" rpy="0 0 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
@@ -42,7 +42,7 @@
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0.018 0.024 0.023" rpy="0 0 0" />
+      <origin xyz="0.018 0.014 0.011" rpy="0 0 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
@@ -292,7 +292,7 @@
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0 0.017 0.011" rpy="0 1.5707963267948966 0" />
+      <origin xyz="0 0.014 0.011" rpy="0 1.5707963267948966 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
@@ -319,19 +319,19 @@
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0.031 0.017 0.011" rpy="0 0 0" />
+      <origin xyz="0.029 0.014 0.011" rpy="0 0 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/motor_cover.obj" scale="0.75 0.75 0.75" />
+        <mesh filename="meshes/motor_cover.obj" scale="0.82 0.82 0.82" />
       </geometry>
     </visual>
   </link>
   <joint name="thumb_base_sweep" type="revolute">
     <parent link="palm" />
     <child link="thumb_base_hub" />
-    <origin xyz="0.018 0.024 0.023" rpy="0 0 0" />
+    <origin xyz="0.018 0.014 0.011" rpy="0 0 0" />
     <axis xyz="0 0 1" />
     <limit lower="-0.3490658503988659" upper="1.5009831567151235" effort="1.5" velocity="2.0" />
   </joint>
@@ -341,7 +341,7 @@
         <color rgba="0.72 0.77 0.66 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/proximal_shell.obj" scale="0.74 0.74 0.7234" />
+        <mesh filename="meshes/proximal_shell.obj" scale="0.82 0.82 0.84" />
       </geometry>
     </visual>
     <visual>
@@ -349,57 +349,59 @@
         <color rgba="0.78 0.56 0.24 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/proximal_spine.obj" scale="0.74 0.74 0.7234" />
+        <mesh filename="meshes/proximal_spine.obj" scale="0.82 0.82 0.84" />
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0 0 0.034" rpy="0 0 0" />
+      <origin xyz="0 0 0.03948" rpy="0 0 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/motor_cover.obj" scale="0.68 0.68 0.68" />
+        <mesh filename="meshes/motor_cover.obj" scale="0.82 0.82 0.82" />
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0 0 0.034" rpy="0 0 0" />
+      <origin xyz="0 0 0.03948" rpy="0 0 0" />
       <material name="gold">
         <color rgba="0.78 0.56 0.24 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/motor_cap.obj" scale="0.68 0.68 0.68" />
+        <mesh filename="meshes/motor_cap.obj" scale="0.82 0.82 0.82" />
       </geometry>
     </visual>
   </link>
   <joint name="thumb_mcp_flex" type="revolute">
     <parent link="thumb_base_hub" />
     <child link="thumb_proximal" />
-    <origin xyz="0.031 0.017 0.011" rpy="0 0 0" />
+    <origin xyz="0.029 0.014 0.011" rpy="0 0 0" />
     <axis xyz="-1 0 0" />
     <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
   </joint>
   <link name="thumb_distal">
     <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.5707963267948966" />
       <material name="sage">
         <color rgba="0.72 0.77 0.66 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/distal_shell.obj" scale="0.66 0.66 0.561" />
+        <mesh filename="meshes/distal_shell.obj" scale="0.82 0.82 0.82" />
       </geometry>
     </visual>
     <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.5707963267948966" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/distal_pad.obj" scale="0.66 0.66 0.561" />
+        <mesh filename="meshes/distal_pad.obj" scale="0.82 0.82 0.82" />
       </geometry>
     </visual>
   </link>
   <joint name="thumb_pip_flex" type="revolute">
     <parent link="thumb_proximal" />
     <child link="thumb_distal" />
-    <origin xyz="0 0 0.034" rpy="0 0 0" />
+    <origin xyz="0 0 0.03948" rpy="0 0 0" />
     <axis xyz="-1 0 0" />
     <limit lower="0" upper="1.7453292519943295" effort="1.5" velocity="2.0" />
   </joint>

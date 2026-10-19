@@ -5,10 +5,17 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '42';
+const studioVersion = '44';
+const visualPassiveResponse = {
+  // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
+  // original renderer held it at zero. Show a bounded response to radial
+  // cupping in this kinematic preview without changing the source asset.
+  kestrel17: {palm_ulnar_cup:{source:'palm_radial_cup',multiplier:.8}},
+};
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 const metadataCache = new Map(), sceneCache = new Map();
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
+let slowStart = {}, slowEnd = {};
 const viewport = $('viewport');
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -131,18 +138,33 @@ function addBasicPoses(next){
 }
 function pose(name){slow=false;selectedPose=name;target=values(model.poses[name]);buttons();$('status').textContent=name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;}
 function buttons(){for(const b of $('actions').querySelectorAll('button'))b.classList.toggle('on',Boolean(b.dataset.pose===selectedPose&&!slow||b.dataset.slow&&slow));}
+function loopDependent(name){return Boolean(model?.closed_loop_preview&&/(?:index|middle|ring)_dip(?:_linkage)?_joint$/.test(name));}
+function closeMidasLoops(q){
+  if(!model.closed_loop_preview)return;
+  for(const [finger, samples] of Object.entries(model.closed_loop_preview.fingers)){
+    const pip=clamp(q[`${finger}_pip_joint`]??0,samples.at(-1)[0],samples[0][0]);
+    let i=1;while(i<samples.length-1&&samples[i][0]>pip)i++;
+    const a=samples[i-1],b=samples[i],t=(pip-a[0])/(b[0]-a[0]);
+    q[`${finger}_dip_joint`]=a[1]+t*(b[1]-a[1]);
+    q[`${finger}_dip_linkage_joint`]=a[2]+t*(b[2]-a[2]);
+  }
+}
 function apply(q){
-  const resolved={...q}, resolving=new Set();
+  const resolved={...q}, resolving=new Set();closeMidasLoops(resolved);
   function resolve(j){
     if(resolved[j.name]!==undefined)return resolved[j.name];
     if(resolving.has(j.name))throw new Error('Cyclic mimic joint');
     resolving.add(j.name);
     const src=j.mimic?model.joints.find(x=>x.name===j.mimic.source):null;
-    const v=src?resolve(src)*j.mimic.multiplier+j.mimic.offset:0;
+    const preview=visualPassiveResponse[model.id]?.[j.name];
+    // Passive joints are not actuators. This is an explicitly visual response
+    // to a neighboring active joint, not a source-URDF mimic or force model.
+    const v=src?resolve(src)*j.mimic.multiplier+j.mimic.offset:
+      preview?(q[preview.source]??0)*preview.multiplier+(preview.offset??0):0;
     resolving.delete(j.name);return resolved[j.name]=clamp(v,j.lower,j.upper);
   }
   for(const j of model.joints){const node=joints.get(j.name);if(!node)continue;const qj=resolve(j);node.position.fromArray(j.position);node.quaternion.fromArray(j.quaternion);if(j.type==='prismatic'){node.position.add(new THREE.Vector3().fromArray(j.axis).applyQuaternion(node.quaternion).multiplyScalar(qj));}else{axisQ.setFromAxisAngle(new THREE.Vector3().fromArray(j.axis),qj);node.quaternion.multiply(axisQ);}}
-  for(const c of model.controls){const {input,output}=sliders.get(c.name);const value=c.unit==='m'?q[c.name]*1000:THREE.MathUtils.radToDeg(q[c.name]);input.value=value;output.value=value.toFixed(1)+(c.unit==='m'?' mm':'°');}
+  for(const c of model.controls){const {input,output}=sliders.get(c.name);const value=c.unit==='m'?resolved[c.name]*1000:THREE.MathUtils.radToDeg(resolved[c.name]);input.value=value;output.value=value.toFixed(1)+(c.unit==='m'?' mm':'°');}
 }
 function buildControls(){
   $('controls').replaceChildren();sliders.clear();const groups=new Map();
@@ -150,12 +172,28 @@ function buildControls(){
     if(!groups.has(c.group)){const section=document.createElement('section');section.className='studio-group';const heading=document.createElement('h3');heading.textContent=c.group;section.append(heading);$('controls').append(section);groups.set(c.group,section);}
     const row=document.createElement('div');row.className='studio-joint';const label=document.createElement('label'),span=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');
     input.id='studio-joint-'+i;label.htmlFor=input.id;span.textContent=c.label;label.append(span,output);input.type='range';const scale=c.unit==='m'?1000:180/Math.PI;input.min=c.lower*scale;input.max=c.upper*scale;input.step=c.unit==='m'?.1:.5;input.setAttribute('aria-label',c.group+' '+c.label);
+    if(loopDependent(c.name)){input.disabled=true;input.title='Follows the PIP joint through the original MIDAS fingertip linkage';}
     input.addEventListener('input',()=>{slow=false;selectedPose='';target={...current,[c.name]:Number(input.value)/scale};current={...target};apply(current);buttons();dirty=true;});
     row.append(label,input);groups.get(c.group).append(row);sliders.set(c.name,{input,output});
   }
   $('actions').replaceChildren();
   for(const name of (model.category==='others'?['neutral','flex']:basicPoses)){const b=document.createElement('button');b.textContent=name[0].toUpperCase()+name.slice(1);b.dataset.pose=name;b.onclick=()=>pose(name);$('actions').append(b);}
-  const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{if(!selectedPose||selectedPose==='neutral')selectedPose=model.category==='others'?'flex':'wrap';slow=!slow;if(!slow)target={...current};clockStart=performance.now();buttons();dirty=true;};$('actions').append(b);
+  const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{
+    if(!slow){
+      slowStart={...current};slowEnd={};
+      const preferred=values(model.poses[selectedPose==='neutral'?(model.category==='others'?'flex':'wrap'):selectedPose]||model.poses.neutral);
+      for(const c of model.controls){
+        const start=slowStart[c.name],span=c.upper-c.lower;
+        if(loopDependent(c.name)){slowEnd[c.name]=start;continue;}
+        if(span<=1e-8){slowEnd[c.name]=start;continue;}
+        if(Math.abs(preferred[c.name]-start)>=.12*span){slowEnd[c.name]=preferred[c.name];continue;}
+        const bound=c.upper-start>=start-c.lower?c.upper:c.lower;
+        slowEnd[c.name]=clamp(start+.65*(bound-start),c.lower,c.upper);
+      }
+      $('status').textContent='Slow preview sweeps every active DoF; passive joints follow the visual response shown in the model.';
+    }else target={...current};
+    slow=!slow;clockStart=performance.now();buttons();dirty=true;
+  };$('actions').append(b);
 }
 function showReviewLegend(){
   const legend=$('review-legend');legend.replaceChildren();
@@ -167,6 +205,11 @@ function showReviewLegend(){
     const swatch=document.createElement('span');swatch.className='studio-review-swatch';swatch.style.backgroundColor=part.color;
     const label=document.createElement('span');label.textContent=part.label;item.append(swatch,label);legend.append(item);
   }
+}
+function countText(next){
+  return next.closed_loop_preview?
+    `${next.counts.active} URDF joints · 6 source-loop joints follow PIP in this preview`:
+    `${next.counts.active} active · ${next.counts.coupled} coupled · ${next.counts.passive} passive`;
 }
 async function choose(id){
   const token=++generation;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
@@ -185,19 +228,19 @@ async function choose(id){
     if(next.category==='ai'&&next.display_reflection)root.scale.x=-1;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
-    $('name').textContent=model.name;$('counts').textContent=`${model.counts.active} active · ${model.counts.coupled} coupled · ${model.counts.passive} passive`;
+    $('name').textContent=model.name;$('counts').textContent=countText(model);
     buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
-    selectedPose='neutral';buttons();$('status').textContent=model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
+    selectedPose='neutral';buttons();$('status').textContent=model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
 function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=category;$('model').onchange=()=>choose($('model').value);
 function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
-  if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2,a=values(model.poses.neutral),b=values(model.poses[selectedPose]);for(const c of model.controls)current[c.name]=a[c.name]*(1-x)+b[c.name]*x;moving=true;}
+  if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2;for(const c of model.controls)current[c.name]=slowStart[c.name]*(1-x)+slowEnd[c.name]*x;moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*.15;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
