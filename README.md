@@ -53,7 +53,10 @@ under **Robot hand**, ten generated concepts under **AI gen**, and the SUPR foot
 under **Others**. The active/coupled counts describe the project's direct-motor
 simulation assets, not necessarily the manufacturer's original transmission.
 AI concepts are reflected into the same right-hand convention; both transforms
-and axial vectors are reflected, not just the mesh.
+and axial vectors are reflected, not just the mesh. TALON-9's authored source
+is left-sided; its exported browser GLB and the reconstructed physical right
+asset use the reflected geometry. Its physical left asset is mirrored from the
+right with Skynet's existing routine.
 
 Authoritative real geometry and kinematics come from the Skynet snapshot at
 `3fc9c1f26882f4baee43c419d247ece9fb4a3109`. Each model JSON records source URDF/mesh
@@ -76,6 +79,9 @@ Dependencies for the exporter: NumPy, SciPy, trimesh, and fast-simplification.
 and mobile layout using a local Playwright installation. Point `PLAYWRIGHT_MODULE`
 at that package and optionally set `CHROME_PATH`. `QA_MODELS` accepts comma-separated
 model IDs for a focused check. QA images are not published. Run
+`scripts/refresh_hand_studio_posters.cjs` against the same local server after
+changing display colors or meshes, so the loading posters match the live model.
+Run
 `scripts/validate_hand_studio.py` with the same `--ai-root` and `--skynet-root`
 arguments to compare exported joint transforms against the authoritative URDFs.
 

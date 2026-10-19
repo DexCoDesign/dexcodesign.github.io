@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '44';
+const studioVersion = '45';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -223,9 +223,9 @@ async function choose(id){
     const template=await getScene(next,token);
     if(token!==generation)return;
     if(root)scene.remove(root);root=template.clone(true);
-    // Older AI GLBs were reflected although their source geometry is already
-    // right-handed. Cancel only that recorded display reflection.
-    if(next.category==='ai'&&next.display_reflection)root.scale.x=-1;
+    // Legacy AI exports were reflected although those sources were already
+    // right-sided; TALON-9 is the opposite and needs its export reflection.
+    if(next.category==='ai'&&next.display_reflection&&next.id!=='talon9')root.scale.x=-1;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
     $('name').textContent=model.name;$('counts').textContent=countText(model);

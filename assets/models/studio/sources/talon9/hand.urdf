@@ -1,4 +1,4 @@
-<robot name="TALON-9-right-hand">
+<robot name="TALON-9-left-source-hand">
   <link name="palm">
     <visual>
       <material name="olive">

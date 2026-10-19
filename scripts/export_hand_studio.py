@@ -244,7 +244,20 @@ def main():
     ap.add_argument('--skynet-root', type=Path)
     ap.add_argument('--snapshot-commit', default='unknown')
     ap.add_argument('--skip-ai',action='store_true')
+    ap.add_argument('--talon-only', action='store_true',
+                    help='Refresh the TALON-9 right-hand display without rebuilding other assets')
     args = ap.parse_args()
+    if args.talon_only:
+        base = ROOT / 'assets/models/studio/sources/talon9'
+        spec = json.loads((base / 'specification.json').read_text())
+        row = export_one(base / 'hand.urdf', 'talon9', 'TALON-9', 'ai', spec,
+                         'Locally generated mechanical concept', mirror=True)
+        catalog_path = OUT / 'catalog.json'
+        catalog = json.loads(catalog_path.read_text())
+        catalog['records'] = [row if item['id'] == 'talon9' else item
+                              for item in catalog['records']]
+        catalog_path.write_text(json.dumps(catalog, indent=2) + '\n')
+        return
     records = []
     if args.skip_ai:
         records=[r for r in json.loads((OUT/'catalog.json').read_text())['records'] if r['category']=='ai']
@@ -255,7 +268,8 @@ def main():
             row = {**row, 'id': 'talon9', 'name': 'TALON-9'}
         base = ROOT/'assets/models/studio/sources/talon9' if row['id']=='talon9' else args.ai_root / 'models' / row['id']
         spec = json.loads((base / 'specification.json').read_text())
-        records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec, 'Locally generated mechanical concept'))
+        records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec,
+                                  'Locally generated mechanical concept', mirror=True))
     if args.skynet_root:
         registry = json.loads((args.skynet_root / 'direct_motor/registry.json').read_text())
         recovered=recovered_materials(args.skynet_root)

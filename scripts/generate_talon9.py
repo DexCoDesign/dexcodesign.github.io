@@ -136,7 +136,9 @@ def save_meshes():
 
 
 def build_urdf():
-    root = ET.Element("robot", name="TALON-9-right-hand")
+    # The authored +X thumb layout is left-handed in the studio's palm-facing
+    # convention. The website exporter mirrors this source into a right hand.
+    root = ET.Element("robot", name="TALON-9-left-source-hand")
     palm = ET.SubElement(root, "link", name="palm")
     for mesh, color in (("palm_shell", "olive"), ("palm_face", "sage"),
                         ("wrist_collar", "graphite"), ("palm_inlay", "alloy")):
