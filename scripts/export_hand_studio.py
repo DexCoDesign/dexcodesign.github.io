@@ -189,7 +189,7 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                  source=provenance, source_urdf_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                  source_mesh_sha256=mesh_hashes, display_reflection='X reflection of AI source; axial vectors reflected with determinant sign' if mirror else None,
                  bounds=scene.bounds.tolist(), materials=color_audit,
-                 view_direction=[1,.35,.28] if mid=='tesollo_dg5f' else [.42,1,.28],
+                 view_direction=[-.42,-1,.28] if mid=='mano' else [1,.35,.28] if mid=='tesollo_dg5f' else [.42,1,.28],
                  pinch_note=spec.get('pinch_note') if spec else None,
                  semantics='Visual meshes and exact joint forward kinematics. No physics, contact, grasp or payload validation in the browser.')
     (OUT / f'{mid}.json').write_text(json.dumps(model, separators=(',', ':')) + '\n')
@@ -220,7 +220,7 @@ def main():
                 continue
             path = args.skynet_root / entry['path']
             category = 'others' if 'foot' in mid else 'hand' if mid == 'mano' else 'robot'
-            records.append(export_one(path, mid, record['display_name'], category, recovered=recovered,
+            records.append(export_one(path, mid, 'Foot' if mid=='supr_female_foot' else record['display_name'], category, recovered=recovered,
                 provenance={'host':'Skynet','commit':args.snapshot_commit,'path':'assets/robot_hands/' + entry['path'],'upstream':record.get('source')}))
         license_dir=OUT/'licenses';license_dir.mkdir(exist_ok=True)
         for path in args.skynet_root.glob('*/LICENSE*'):

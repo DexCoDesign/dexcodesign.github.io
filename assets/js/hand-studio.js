@@ -5,6 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
+const studioVersion = '3';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
@@ -28,7 +29,7 @@ orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 scene.add(new THREE.HemisphereLight(0xe7f2ff,0x697079,.55));
-for (const [color,intensity,pos] of [[0xfff1de,1.15,[.5,.7,.9]],[0xc1daff,.3,[-.4,-.6,.5]],[0xffffff,.2,[.1,-.2,1]]]) {
+for (const [color,intensity,pos] of [[0xfff1de,1.05,[.5,.7,.9]],[0xdce9ff,.85,[-.4,-.7,.65]],[0xffffff,.2,[.1,-.2,1]]]) {
   const light=new THREE.DirectionalLight(color,intensity);light.position.set(...pos);scene.add(light);
 }
 const loader = new GLTFLoader();
@@ -105,7 +106,7 @@ async function choose(id){
   const token=++generation;slow=false;$('loading').hidden=false;$('loading').textContent='Loading model…';$('controls').replaceChildren();$('actions').replaceChildren();
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
-    const response=await fetch(record.metadata);if(!response.ok)throw new Error('Model metadata unavailable');const next=await response.json();
+    const response=await fetch(`${record.metadata}?v=${studioVersion}`);if(!response.ok)throw new Error('Model metadata unavailable');const next=await response.json();
     const gltf=await loader.loadAsync(next.glb,e=>{if(token===generation&&e.total)$('loading').textContent='Loading model · '+Math.round(e.loaded/e.total*100)+'%';});
     if(token!==generation){dispose(gltf.scene);return;}
     if(root){scene.remove(root);dispose(root);}root=gltf.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
@@ -127,4 +128,4 @@ function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!mo
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
 requestAnimationFrame(tick);
-fetch('assets/models/studio/catalog.json').then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;category();}).catch(e=>{$('loading').textContent=e.message;});
+fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;category();}).catch(e=>{$('loading').textContent=e.message;});
