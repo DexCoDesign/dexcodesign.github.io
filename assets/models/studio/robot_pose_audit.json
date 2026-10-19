@@ -1,0 +1,89 @@
+{
+  "wuji_hand_2": {
+    "neutral_tip_gap_m": 0.12274125900841383,
+    "pinch_tip_gap_m": 2.9435362120712526e-09,
+    "spread_lateral_joints": [
+      "r_thumb_cmc_abd",
+      "r_index_finger_mcp_abd",
+      "r_ring_finger_mcp_abd",
+      "r_pinky_mcp_abd"
+    ]
+  },
+  "sharpa_wave_01": {
+    "neutral_tip_gap_m": 0.13034960635920592,
+    "pinch_tip_gap_m": 5.638835341865608e-09,
+    "spread_lateral_joints": [
+      "right_thumb_CMC_AA",
+      "right_thumb_MCP_AA",
+      "right_index_MCP_AA",
+      "right_ring_MCP_AA",
+      "right_pinky_MCP_AA"
+    ]
+  },
+  "tesollo_dg5f": {
+    "neutral_tip_gap_m": 0.20810348387280786,
+    "pinch_tip_gap_m": 1.8460703772696884e-09,
+    "spread_lateral_joints": [
+      "rj_dg_1_1",
+      "rj_dg_2_1",
+      "rj_dg_4_1",
+      "rj_dg_5_1"
+    ]
+  },
+  "unitree_dex5_1": {
+    "neutral_tip_gap_m": 0.2024994173265238,
+    "pinch_tip_gap_m": 2.811760533231229e-09,
+    "spread_lateral_joints": [
+      "Yaw_11R",
+      "Roll_21R",
+      "Roll_41R",
+      "Roll_51R"
+    ]
+  },
+  "shadow_hand_e": {
+    "neutral_tip_gap_m": 0.11672127744004408,
+    "pinch_tip_gap_m": 2.8813803125744927e-09,
+    "spread_lateral_joints": [
+      "rh_FFJ4",
+      "rh_RFJ4",
+      "rh_LFJ4",
+      "rh_THJ3"
+    ]
+  },
+  "midas_hand": {
+    "neutral_tip_gap_m": 0.13300943105164212,
+    "pinch_tip_gap_m": 3.1710270376225014e-09,
+    "spread_lateral_joints": [
+      "thumb_cmc_side_joint",
+      "index_mcp_abad_joint",
+      "ring_mcp_abad_joint"
+    ]
+  },
+  "ruka_v2": {
+    "neutral_tip_gap_m": 0.09063541235741336,
+    "pinch_tip_gap_m": 1.871236722987249e-09,
+    "spread_lateral_joints": [
+      "index_splay",
+      "ring_splay",
+      "pinky_splay",
+      "thumb_cmc"
+    ]
+  },
+  "inspire_rh56dfx": {
+    "neutral_tip_gap_m": 0.12738512336512223,
+    "pinch_tip_gap_m": 3.503510717517597e-09,
+    "spread_lateral_joints": [
+      "thumb_proximal_yaw_joint"
+    ]
+  },
+  "robotera_xhand1_pro": {
+    "neutral_tip_gap_m": 0.15734236123932657,
+    "pinch_tip_gap_m": 4.938790238380081e-09,
+    "spread_lateral_joints": [
+      "right_hand_thumb_mcp0_joint",
+      "right_hand_index_mcp0_joint",
+      "right_hand_ring_mcp0_joint",
+      "right_hand_pinky_mcp0_joint"
+    ]
+  }
+}

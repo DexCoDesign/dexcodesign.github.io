@@ -11,7 +11,7 @@
         "coupled": 8,
         "passive": 0
       },
-      "bytes": 2414540,
+      "bytes": 2414252,
       "metadata": "assets/models/studio/lyra10.json"
     },
     {
@@ -24,7 +24,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 3249840,
+      "bytes": 3249624,
       "metadata": "assets/models/studio/aster20.json"
     },
     {
@@ -37,7 +37,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 3005736,
+      "bytes": 3005520,
       "metadata": "assets/models/studio/orion16.json"
     },
     {
@@ -50,7 +50,7 @@
         "coupled": 4,
         "passive": 1
       },
-      "bytes": 1409816,
+      "bytes": 1409612,
       "metadata": "assets/models/studio/vela12.json"
     },
     {
@@ -63,7 +63,7 @@
         "coupled": 8,
         "passive": 4
       },
-      "bytes": 2253460,
+      "bytes": 2253164,
       "metadata": "assets/models/studio/sora8.json"
     },
     {
@@ -76,7 +76,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 85648,
+      "bytes": 96128,
       "metadata": "assets/models/studio/talon9.json"
     },
     {
@@ -89,7 +89,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 3125012,
+      "bytes": 3124720,
       "metadata": "assets/models/studio/nacre18.json"
     },
     {
@@ -102,7 +102,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 1819160,
+      "bytes": 1818912,
       "metadata": "assets/models/studio/helix15.json"
     },
     {
@@ -115,7 +115,7 @@
         "coupled": 0,
         "passive": 5
       },
-      "bytes": 2815724,
+      "bytes": 2815420,
       "metadata": "assets/models/studio/reed11.json"
     },
     {
@@ -128,7 +128,7 @@
         "coupled": 4,
         "passive": 1
       },
-      "bytes": 3425176,
+      "bytes": 3424868,
       "metadata": "assets/models/studio/kestrel17.json"
     },
     {
@@ -154,7 +154,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 1979896,
+      "bytes": 17867600,
       "metadata": "assets/models/studio/wuji_hand_2.json"
     },
     {
@@ -167,7 +167,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2619676,
+      "bytes": 2619588,
       "metadata": "assets/models/studio/sharpa_wave_01.json"
     },
     {
@@ -180,7 +180,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 1559236,
+      "bytes": 1559064,
       "metadata": "assets/models/studio/tesollo_dg5f.json"
     },
     {
@@ -193,7 +193,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2411744,
+      "bytes": 2411616,
       "metadata": "assets/models/studio/unitree_dex5_1.json"
     },
     {
@@ -206,7 +206,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 623936,
+      "bytes": 623940,
       "metadata": "assets/models/studio/shadow_hand_e.json"
     },
     {
@@ -219,7 +219,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 9108052,
+      "bytes": 9108364,
       "metadata": "assets/models/studio/midas_hand.json"
     },
     {
@@ -232,7 +232,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 9061392,
+      "bytes": 9061404,
       "metadata": "assets/models/studio/ruka_v2.json"
     },
     {
@@ -245,7 +245,7 @@
         "coupled": 6,
         "passive": 0
       },
-      "bytes": 1145132,
+      "bytes": 1145440,
       "metadata": "assets/models/studio/inspire_rh56dfx.json"
     },
     {

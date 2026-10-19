@@ -6,9 +6,10 @@
   <meta name="description" content="DexCoDesign research project page." />
   <title>DexCoDesign</title>
   <link rel="stylesheet" href="assets/css/styles.css?v=20261016-benchmark-small" />
-  <link rel="stylesheet" href="assets/css/hand-studio.css?v=4" />
+  <link rel="stylesheet" href="assets/css/hand-studio.css?v=8" />
   <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
-  <script type="module" src="assets/js/hand-studio.js?v=11"></script>
+    <script type="module" src="assets/js/hand-studio.js?v=42"></script>
+  <script>if(location.protocol==='file:')addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('studio-loading-text');if(el)el.innerHTML='For the latest interactive preview, <a href="http://127.0.0.1:8766/#hand-studio">open the local HTTP page</a> (or the <a href="https://dexcodesign.github.io/#hand-studio">published site</a>).';});</script>
 </head>
 <body>
   <nav class="site-nav" aria-label="Main navigation">
@@ -52,6 +53,7 @@
             </div>
             <div class="studio-actions" id="studio-actions"></div>
             <p class="studio-status" id="studio-status" role="status"></p>
+            <div class="studio-review-legend" id="studio-review-legend" hidden></div>
           </div>
           <aside id="studio-controls" aria-label="Joint controls"></aside>
         </div>

@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '11';
+const studioVersion = '42';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 const metadataCache = new Map(), sceneCache = new Map();
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
@@ -14,9 +14,9 @@ const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setClearColor(0,0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// Keep authored material colors legible: a uniform neutral fill, no filmic
-// shoulder that turns pale metals and skin into the same gray-white value.
-renderer.toneMapping = THREE.NoToneMapping;
+// Keep highlights from clipping while preserving the authored material hue.
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.25;
 viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
@@ -29,9 +29,9 @@ orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
-scene.add(new THREE.AmbientLight(0xffffff,.55));
+scene.add(new THREE.AmbientLight(0xffffff,.65));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
-  const light=new THREE.DirectionalLight(0xffffff,.16);light.position.set(...pos);scene.add(light);
+  const light=new THREE.DirectionalLight(0xffffff,.18);light.position.set(...pos);scene.add(light);
 }
 const palmView = {
   wuji_hand_2:[-.42,-1,.28], sharpa_wave_01:[1,.35,.28], tesollo_dg5f:[1,.35,.28],
@@ -39,6 +39,25 @@ const palmView = {
   ruka_v2:[-.42,-1,.28], inspire_rh56dfx:[-.42,-1,.28], robotera_xhand1_pro:[-.42,-1,.28],
 };
 const loader = new GLTFLoader();
+// All models share the same lamps. Material-specific reflection distinguishes
+// metallic housings from plastic; there are no model-specific lighting hacks.
+function displayMaterial(material){
+  if(!material?.isMeshStandardMaterial)return material;
+  const metal=material.metalness>=.45;
+  const matte=!metal&&material.roughness>=.7;
+  const printed=!metal&&material.roughness>=.65&&!matte;
+  return new THREE.MeshPhongMaterial({
+    name:material.name,
+    color:material.color,
+    map:material.map,
+    transparent:material.transparent,
+    opacity:material.opacity,
+    side:material.side,
+    vertexColors:material.vertexColors,
+    specular:new THREE.Color(metal?0x9ca8b2:matte?0x1e1e1e:printed?0x303030:0x383838),
+    shininess:metal?84:matte?14:printed?20:28,
+  });
+}
 const axisQ = new THREE.Quaternion();
 new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();dirty=true;}).observe(viewport);
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;dirty=true;}).observe(viewport);
@@ -54,7 +73,18 @@ async function getMetadata(record){
 async function getScene(next,token){
   if(!sceneCache.has(next.id))sceneCache.set(next.id,loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{
     if(token===generation&&e.total)loading(Math.min(99,100*e.loaded/e.total));
-  }).then(gltf=>gltf.scene).catch(e=>{sceneCache.delete(next.id);throw e;}));
+  }).then(gltf=>{
+    const converted=new Map();
+    gltf.scene.traverse(node=>{
+      if(!node.isMesh)return;
+      const convert=material=>{
+        if(!converted.has(material))converted.set(material,displayMaterial(material));
+        return converted.get(material);
+      };
+      node.material=Array.isArray(node.material)?node.material.map(convert):convert(node.material);
+    });
+    return gltf.scene;
+  }).catch(e=>{sceneCache.delete(next.id);throw e;}));
   return sceneCache.get(next.id);
 }
 function values(pose){return Object.fromEntries(model.controls.map(c=>[c.name,clamp(pose[c.name]??0,c.lower,c.upper)]));}
@@ -78,6 +108,12 @@ function movement(control,fraction,sign=1){
 function addBasicPoses(next){
   if(next.category==='others')return;
   const neutral=Object.fromEntries(next.controls.map(c=>[c.name,clamp(next.poses.neutral?.[c.name]??0,c.lower,c.upper)]));
+  if(next.category==='robot'){
+    // Robot axes and flexion signs vary. Only use presets derived from this
+    // model's kinematic chain; the old name/limit heuristic closed Spread.
+    for(const name of basicPoses)if(!next.poses[name])throw new Error(`Missing verified ${name} preset for ${next.name}`);
+    return;
+  }
   const spread={...neutral},wrap={...neutral},pinch={...neutral};
   for(const c of next.controls){
     const finger=fingerOf(c),n=c.name.toLowerCase();
@@ -121,8 +157,19 @@ function buildControls(){
   for(const name of (model.category==='others'?['neutral','flex']:basicPoses)){const b=document.createElement('button');b.textContent=name[0].toUpperCase()+name.slice(1);b.dataset.pose=name;b.onclick=()=>pose(name);$('actions').append(b);}
   const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{if(!selectedPose||selectedPose==='neutral')selectedPose=model.category==='others'?'flex':'wrap';slow=!slow;if(!slow)target={...current};clockStart=performance.now();buttons();dirty=true;};$('actions').append(b);
 }
+function showReviewLegend(){
+  const legend=$('review-legend');legend.replaceChildren();
+  if(!model.review_palette){legend.hidden=true;return;}
+  legend.hidden=false;
+  const heading=document.createElement('div');heading.className='studio-review-heading';heading.textContent='Temporary color key · existing black parts stay black';legend.append(heading);
+  for(const part of model.review_palette.parts){
+    const item=document.createElement('div');item.className='studio-review-item';item.title=part.link;
+    const swatch=document.createElement('span');swatch.className='studio-review-swatch';swatch.style.backgroundColor=part.color;
+    const label=document.createElement('span');label.textContent=part.label;item.append(swatch,label);legend.append(item);
+  }
+}
 async function choose(id){
-  const token=++generation;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();
+  const token=++generation;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
@@ -139,7 +186,7 @@ async function choose(id){
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
     $('name').textContent=model.name;$('counts').textContent=`${model.counts.active} active · ${model.counts.coupled} coupled · ${model.counts.passive} passive`;
-    buildControls();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
+    buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();

@@ -17,6 +17,8 @@ import numpy as np
 import trimesh
 from scipy.spatial.transform import Rotation
 
+from studio_display_palette import PHOTO_REFERENCES, display_rgba, display_surface
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'assets/models/studio'
 REFLECT = np.diag([-1., 1., 1., 1.])
@@ -60,10 +62,15 @@ def appearance(mid, link, color, source, recovered):
     if mid=='sharpa_wave_01':
         return np.array([.67,.70,.73,1]),'display-silver-casing'
     if mid=='unitree_dex5_1':
-        # A little value separation makes the black articulated shell readable
-        # against the studio's dark backdrop without changing its hue.
-        value = .29 if link=='base_link00' else .19 if re.search(r'Link_[1-5]4R$',link) else .24
-        return np.array([value,value+.015,value+.025,1]),'display-opaque-charcoal-black-casing'
+        # The source URDF gives every segment nearly the same light gray.
+        # The physical casing is black/graphite, unlike the URDF placeholder.
+        if link == 'base_link00':
+            rgba = [.22, .23, .24, 1]
+        elif re.search(r'Link_[1-5]4R$', link):
+            rgba = [.10, .11, .12, 1]
+        else:
+            rgba = [.17, .18, .19, 1]
+        return np.array(rgba), 'display-segmented-charcoal-casing'
     return color,source
 
 
@@ -164,12 +171,18 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
             else:
                 continue
             color,color_source=appearance(mid,link.get('name'),color,color_source,recovered or {})
-            color_audit.append(dict(link=link.get('name'), visual=vi, rgba=color.tolist(), source_rgba=original_color, origin=color_source))
+            selected=display_rgba(mid,link.get('name'),vi,original_color or color.tolist())
+            if selected is not None:
+                color,color_source=np.asarray(selected[0]),selected[1]
+            metal,rough=display_surface(mid,link.get('name'))
+            color_audit.append(dict(link=link.get('name'), visual=vi, rgba=color.tolist(), source_rgba=original_color,
+                                    origin=color_source, display_reference=PHOTO_REFERENCES.get(mid,'authored-concept-palette') if selected else None,
+                                    display_metalness=metal,display_roughness=rough))
             mesh.apply_transform(origin(visual.find('origin')))
             if mirror:
                 mesh.apply_transform(REFLECT)
-            groups[tuple(color)].append(mesh)
-        for gi, (rgba, pieces) in enumerate(groups.items()):
+            groups[(tuple(color),metal,rough)].append(mesh)
+        for gi, ((rgba,metal,rough), pieces) in enumerate(groups.items()):
             mesh = trimesh.util.concatenate(pieces)
             # STL-derived OBJ files often repeat all three vertices per face.
             # Decimating that disconnected soup first deletes whole surfaces.
@@ -181,10 +194,6 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                     mesh = reduced
             # Native MuJoCo used smooth mesh normals.
             _ = mesh.vertex_normals
-            # The studio intentionally has no HDR environment map. A high
-            # metallic factor would make silver look nearly black here.
-            metal = .05 if mid=='sharpa_wave_01' and rgba[0]>.3 else .12
-            rough = .46 if mid=='sharpa_wave_01' and rgba[0]>.3 else .56
             mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(
                 baseColorFactor=np.clip(np.array(rgba)*255, 0, 255).astype(np.uint8),
                 metallicFactor=metal, roughnessFactor=rough))
@@ -197,6 +206,16 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
         poses['flex']={c['name']:float(np.clip(0,c['lower'],c['upper'])) if re.search('spread|splay|yaw|rot|wrist|WRJ|J4|J5',c['name'],re.I)
                        else float(c['lower']*.2+c['upper']*.25) for c in controls}
         poses['flex']={c['name']:float(np.clip(poses['flex'][c['name']],c['lower'],c['upper'])) for c in controls}
+        # Pose profiles are checked against the exported kinematic chains.
+        # They affect the browser preview only, never the source robot assets.
+        profiles_path = OUT / 'robot_pose_profiles.json'
+        if category == 'robot' and profiles_path.exists():
+            profiles = json.loads(profiles_path.read_text())
+            if mid in profiles:
+                for pose_name, values in profiles[mid].items():
+                    if set(values) != {c['name'] for c in controls}:
+                        raise ValueError(f'Robot pose profile joints changed: {mid}/{pose_name}')
+                    poses[pose_name] = {c['name']: float(np.clip(values[c['name']], c['lower'], c['upper'])) for c in controls}
     OUT.mkdir(parents=True, exist_ok=True)
     glb = scene.export(file_type='glb',include_normals=True)
     (OUT / f'{mid}.glb').write_bytes(glb)
@@ -209,7 +228,9 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                  view_direction=[.42,1,.28] if category=='ai' else
                                 [1,.35,.28] if mid in {'sharpa_wave_01','tesollo_dg5f'} else
                                 [.42,1,.28] if mid=='supr_female_foot' else [-.42,-1,.28],
-                 pinch_note=spec.get('pinch_note') if spec else None,
+                 pinch_note=(spec.get('pinch_note') if spec else
+                             'Thumb/index tip-alignment preview; force closure and contact are not validated.'
+                             if category == 'robot' and 'pinch' in poses else None),
                  concept_note=spec.get('concept_note') if spec else None,
                  semantics='Visual meshes and exact joint forward kinematics. No physics, contact, grasp or payload validation in the browser.')
     (OUT / f'{mid}.json').write_text(json.dumps(model, separators=(',', ':')) + '\n')

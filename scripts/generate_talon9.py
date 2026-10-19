@@ -86,16 +86,26 @@ def visual(link, filename, color, xyz=None, rpy=None, scale=None):
 def save_meshes():
     MESHES.mkdir(parents=True, exist_ok=True)
     shapes = {
+        # The right edge is recessed around the thumb bearing and support,
+        # then widens again at the finger roots. The left wall stays intact.
         "palm_shell": loft([(-.014, 0, 0, .037, .016), (-.005, 0, 0, .048, .019),
-                             (.017, 0, 0, .062, .021), (.038, 0, 0, .063, .020),
-                             (.054, 0, -.001, .059, .017)]),
-        "palm_face": front_plate([(-.043, -.004), (.043, -.004), (.052, .014),
-                                   (.050, .035), (.039, .044), (-.039, .044),
+                             (.005, -.004, 0, .058, .020), (.017, -.010, 0, .055, .021),
+                             (.038, -.010, 0, .055, .020), (.054, 0, -.001, .059, .017)]),
+        "palm_face": front_plate([(-.043, -.004), (.043, -.004), (.034, .014),
+                                   (.030, .035), (.039, .044), (-.039, .044),
                                    (-.050, .035), (-.052, .014)], .019, .022),
         "wrist_collar": loft([(-.020, 0, 0, .030, .019), (-.013, 0, 0, .037, .019),
                                (-.004, 0, 0, .041, .018)]),
-        "thumb_bridge": loft([(0, 0, 0, .010, .013), (.010, 0, 0, .011, .014),
-                                 (.025, 0, 0, .009, .012)]),
+        "thumb_socket": loft([(-.010, 0, 0, .011, .011), (-.004, 0, 0, .013, .013),
+                                 (.007, 0, 0, .013, .013), (.011, 0, 0, .011, .011)]),
+        "thumb_rotor": loft([(-.004, 0, 0, .009, .009), (.006, 0, 0, .011, .011),
+                                (.014, 0, 0, .009, .009)]),
+        "thumb_support": loft([(0, 0, 0, .008, .008), (.009, 0, 0, .010, .010),
+                                  (.023, 0, 0, .009, .009), (.031, 0, 0, .0075, .0075)]),
+        "thumb_bearing_housing": loft([(-.014, 0, 0, .014, .011),
+                                         (-.004, 0, 0, .016, .012),
+                                         (.014, 0, 0, .016, .012),
+                                         (.020, 0, 0, .013, .010)]),
         "motor_cover": loft([(-.013, 0, 0, .0090, .012), (-.009, 0, 0, .0100, .013),
                                (.008, 0, 0, .0100, .013), (.013, 0, 0, .0088, .011)]),
         "motor_cap": loft([(.006, 0, .011, .0068, .0018),
@@ -111,8 +121,8 @@ def save_meshes():
         "distal_pad": front_plate([(-.0054, .018), (.0054, .018), (.0049, .035),
                                      (.0035, .040), (-.0035, .040), (-.0049, .035)],
                                     .0078, .0090),
-        "palm_inlay": front_plate([(-.032, .000), (.032, .000), (.040, .013),
-                                   (.035, .024), (-.035, .024), (-.040, .013)], .0222, .0229),
+        "palm_inlay": front_plate([(-.032, .000), (.032, .000), (.035, .013),
+                                   (.029, .024), (-.035, .024), (-.040, .013)], .0222, .0229),
     }
     # Three opposing finger bases need only a compact palm, not the previous
     # four-finger plate. Keep the thumb anchored inside its radial edge.
@@ -133,20 +143,22 @@ def build_urdf():
         visual(palm, mesh, color)
     # Four opposed two-link digits; the thumb has one extra base sweep.
     # The three fingers have NO lateral axis: MCP and PIP both flex forward.
-    visual(palm, "thumb_bridge", "olive", (.041, .018, .052),
-           (0, math.pi/2, 0))
+    # The thumb bearing is integrated into the radial side of the palm.
+    thumb_root = (.018, .024, .023)
+    visual(palm, "thumb_bearing_housing", "olive", thumb_root)
+    visual(palm, "thumb_socket", "olive", thumb_root)
     digits = [
-        ("index", .027, 0, .048),
-        ("middle", .008, 0, .048),
-        ("ring", -.011, 0, .048),
+        ("index", .027, .003, .048),
+        ("middle", .008, .003, .048),
+        ("ring", -.011, .003, .048),
     ]
     for name, x, y, z in digits:
-        visual(palm, "motor_cover", "olive", (x, y, z))
+        visual(palm, "motor_cover", "olive", (x, y, z), scale=(.82, .82, .82))
         proximal = ET.SubElement(root, "link", name=f"{name}_proximal")
-        visual(proximal, "proximal_shell", "sage")
-        visual(proximal, "proximal_spine", "gold")
-        visual(proximal, "motor_cover", "olive", (0, 0, .047))
-        visual(proximal, "motor_cap", "gold", (0, 0, .047))
+        visual(proximal, "proximal_shell", "sage", scale=(.82, .82, .84))
+        visual(proximal, "proximal_spine", "gold", scale=(.82, .82, .84))
+        visual(proximal, "motor_cover", "olive", (0, 0, .03948), scale=(.82, .82, .82))
+        visual(proximal, "motor_cap", "gold", (0, 0, .03948), scale=(.82, .82, .82))
         mcp = ET.SubElement(root, "joint", name=f"{name}_mcp_flex", type="revolute")
         ET.SubElement(mcp, "parent", link="palm")
         ET.SubElement(mcp, "child", link=f"{name}_proximal")
@@ -155,50 +167,55 @@ def build_urdf():
         ET.SubElement(mcp, "limit", lower="0", upper=str(math.radians(85)),
                       effort="1.5", velocity="2.0")
         distal = ET.SubElement(root, "link", name=f"{name}_distal")
-        visual(distal, "distal_shell", "sage")
-        visual(distal, "distal_pad", "olive")
+        visual(distal, "distal_shell", "sage", scale=(.82, .82, .82))
+        visual(distal, "distal_pad", "olive", scale=(.82, .82, .82))
         pip = ET.SubElement(root, "joint", name=f"{name}_pip_flex", type="revolute")
         ET.SubElement(pip, "parent", link=f"{name}_proximal")
         ET.SubElement(pip, "child", link=f"{name}_distal")
-        ET.SubElement(pip, "origin", xyz="0 0 0.047", rpy="0 0 0")
+        ET.SubElement(pip, "origin", xyz="0 0 0.03948", rpy="0 0 0")
         ET.SubElement(pip, "axis", xyz="-1 0 0")
         ET.SubElement(pip, "limit", lower="0", upper=str(math.radians(100)),
                       effort="1.5", velocity="2.0")
 
-    # An enclosed base motor sweeps the shorter thumb across all three tips.
-    # The next two motors flex its two links toward the opposing digits.
-    thumb_root = (.043, .025, .057)
-    visual(palm, "motor_cover", "alloy", thumb_root, (math.pi/2, 0, 0))
+    # The Z-axis motor is inside the palm. Its short radial support rotates
+    # with the buried bearing and carries a smaller two-link thumb outside.
     thumb_base_hub = ET.SubElement(root, "link", name="thumb_base_hub")
-    visual(thumb_base_hub, "motor_cover", "olive", (0, 0, 0), (math.pi/2, 0, 0))
-    visual(thumb_base_hub, "motor_cap", "gold", (0, 0, 0), (math.pi/2, 0, 0))
+    visual(thumb_base_hub, "thumb_rotor", "alloy")
+    visual(thumb_base_hub, "thumb_support", "olive", (0, .017, .011),
+           (0, math.pi/2, 0))
+    visual(thumb_base_hub, "motor_cover", "olive", (0, 0, 0), scale=(.86, .86, .86))
+    visual(thumb_base_hub, "motor_cap", "gold", (0, 0, 0), scale=(.86, .86, .86))
+    visual(thumb_base_hub, "motor_cover", "olive", (.031, .017, .011), scale=(.75, .75, .75))
     base_sweep = ET.SubElement(root, "joint", name="thumb_base_sweep", type="revolute")
     ET.SubElement(base_sweep, "parent", link="palm")
     ET.SubElement(base_sweep, "child", link="thumb_base_hub")
     ET.SubElement(base_sweep, "origin", xyz=" ".join(map(str, thumb_root)),
-                  rpy=f"0 {math.radians(-50)} 0")
-    ET.SubElement(base_sweep, "axis", xyz="0 1 0")
-    ET.SubElement(base_sweep, "limit", lower=str(math.radians(-30)),
-                  upper=str(math.radians(30)), effort="1.5", velocity="2.0")
+                  rpy="0 0 0")
+    ET.SubElement(base_sweep, "axis", xyz="0 0 1")
+    ET.SubElement(base_sweep, "limit", lower=str(math.radians(-20)),
+                  upper=str(math.radians(86)), effort="1.5", velocity="2.0")
     thumb_proximal = ET.SubElement(root, "link", name="thumb_proximal")
-    visual(thumb_proximal, "proximal_shell", "olive", scale=(.92, .92, .86))
-    visual(thumb_proximal, "proximal_spine", "gold", scale=(.92, .92, .86))
-    visual(thumb_proximal, "motor_cover", "olive", (0, 0, .04042))
-    visual(thumb_proximal, "motor_cap", "gold", (0, 0, .04042))
+    visual(thumb_proximal, "proximal_shell", "sage", scale=(.74, .74, .7234))
+    visual(thumb_proximal, "proximal_spine", "gold", scale=(.74, .74, .7234))
+    visual(thumb_proximal, "motor_cover", "olive", (0, 0, .034), scale=(.68, .68, .68))
+    visual(thumb_proximal, "motor_cap", "gold", (0, 0, .034), scale=(.68, .68, .68))
     thumb_mcp = ET.SubElement(root, "joint", name="thumb_mcp_flex", type="revolute")
     ET.SubElement(thumb_mcp, "parent", link="thumb_base_hub")
     ET.SubElement(thumb_mcp, "child", link="thumb_proximal")
-    ET.SubElement(thumb_mcp, "origin", xyz="0 0 0", rpy="0 0 0")
+    ET.SubElement(thumb_mcp, "origin", xyz="0.031 0.017 0.011",
+                  rpy="0 0 0")
     ET.SubElement(thumb_mcp, "axis", xyz="-1 0 0")
     ET.SubElement(thumb_mcp, "limit", lower="0", upper=str(math.radians(85)),
                   effort="1.5", velocity="2.0")
     thumb_distal = ET.SubElement(root, "link", name="thumb_distal")
-    visual(thumb_distal, "distal_shell", "olive", scale=(.92, .92, .83))
-    visual(thumb_distal, "distal_pad", "sage", scale=(.92, .92, .83))
+    visual(thumb_distal, "distal_shell", "sage", scale=(.66, .66, .561))
+    # Use the same shell/pad profile and orientation as the three fingers.
+    # Rotating the thin pad independently left it visibly detached.
+    visual(thumb_distal, "distal_pad", "olive", scale=(.66, .66, .561))
     thumb_pip = ET.SubElement(root, "joint", name="thumb_pip_flex", type="revolute")
     ET.SubElement(thumb_pip, "parent", link="thumb_proximal")
     ET.SubElement(thumb_pip, "child", link="thumb_distal")
-    ET.SubElement(thumb_pip, "origin", xyz="0 0 0.04042", rpy="0 0 0")
+    ET.SubElement(thumb_pip, "origin", xyz="0 0 0.034", rpy="0 0 0")
     ET.SubElement(thumb_pip, "axis", xyz="-1 0 0")
     ET.SubElement(thumb_pip, "limit", lower="0", upper=str(math.radians(100)),
                   effort="1.5", velocity="2.0")
@@ -211,10 +228,10 @@ def build_urdf():
             "thumb_pip_flex": thumb_pip_angle}
     poses = {
         "neutral": pose(5, 6, 0, 5, 6),
-        "spread": pose(0, 0, 24, 0, 0),
-        "wrap": pose(58, 52, -10, 56, 48),
-        "pinch": pose(12, 12, 15, 25, 56) | {
-            "index_mcp_flex": 50, "index_pip_flex": 26},
+        "spread": pose(0, 0, -20, 0, 0),
+        "wrap": pose(58, 52, 75, 56, 48),
+        "pinch": pose(12, 12, 38, 0, 17) | {
+            "index_mcp_flex": 53, "index_pip_flex": 2},
     }
     spec = {
         "controls": ([{"name": f"{name}_{joint}_flex", "label": "Proximal flex" if joint == "mcp" else "Distal flex",
@@ -224,7 +241,7 @@ def build_urdf():
                       {"name": "thumb_pip_flex", "label": "Distal flex", "group": "Thumb"}]),
         "passive": [], "actuator_couplings": [], "poses": poses,
         "pinch_note": "The thumb and index fingertip converge in the nine-axis preview; grasp forces and force closure are not validated.",
-        "concept_note": "Compact asymmetric four-digit right-hand gripper · each opposing digit has two forward-flexing links · thumb adds a base sweep for three possible opposing pairs · nine enclosed direct-drive axes · no passive joints.",
+        "concept_note": "Compact asymmetric four-digit right-hand gripper · three two-link fingers · palm-integrated Z-axis thumb bearing with a short radial support, proportionate proximal/distal links and the same fitted fingertip pad profile as the fingers · nine enclosed direct-drive axes · no passive joints.",
     }
     (OUT / "specification.json").write_text(json.dumps(spec, indent=2) + "\n")
 
@@ -238,23 +255,25 @@ def validate_pinch():
     for x in (.027, .008, -.011):
         def gap(q):
             base, thumb_mcp, thumb_pip, mcp, pip = q
-            thumb_tip = (np.array((.043, .025, .057)) +
-                         Rotation.from_euler("y", base - 50, degrees=True).apply(
-                             Rotation.from_euler("x", -thumb_mcp, degrees=True).apply(
-                                 np.array((0, 0, .04042)) +
-                                 Rotation.from_euler("x", -thumb_pip, degrees=True).apply(tip * .83))))
-            finger_tip = (np.array((x, 0, .048)) +
+            thumb_tip = (np.array((.018, .024, .023)) +
+                         Rotation.from_euler("z", base, degrees=True).apply(
+                             np.array((.031, .017, .011)) +
+                             Rotation.from_euler("y", 0, degrees=True).apply(
+                              Rotation.from_euler("x", -thumb_mcp, degrees=True).apply(
+                                 np.array((0, 0, .034)) +
+                                 Rotation.from_euler("x", -thumb_pip, degrees=True).apply(tip * .561)))))
+            finger_tip = (np.array((x, .003, .048)) +
                           Rotation.from_euler("x", -mcp, degrees=True).apply(
-                              np.array((0, 0, .047)) +
-                              Rotation.from_euler("x", -pip, degrees=True).apply(tip)))
+                              np.array((0, 0, .03948)) +
+                              Rotation.from_euler("x", -pip, degrees=True).apply(tip * .82)))
             return np.linalg.norm(thumb_tip - finger_tip)
 
-        result = differential_evolution(gap, [(-30, 30), (0, 85), (0, 100),
+        result = differential_evolution(gap, [(-20, 86), (0, 85), (0, 100),
                                                (0, 85), (0, 100)], seed=9,
                                         maxiter=120, popsize=9, polish=True)
         assert result.fun < .008, (x, result.fun, result.x)
         if x == .027:
-            assert .006 < gap((15, 25, 56, 50, 26)) < .011
+            assert gap((38, 0, 17, 53, 2)) < .008
 
 
 if __name__ == "__main__":
