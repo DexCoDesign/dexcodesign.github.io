@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "aster20",
+      "name": "ASTER-20",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 20,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 3249840,
+      "metadata": "assets/models/studio/aster20.json"
+    },
+    {
+      "id": "orion16",
+      "name": "ORION-16",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 16,
+        "coupled": 4,
+        "passive": 0
+      },
+      "bytes": 3005736,
+      "metadata": "assets/models/studio/orion16.json"
+    },
+    {
+      "id": "vela12",
+      "name": "VELA-11",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 11,
+        "coupled": 4,
+        "passive": 1
+      },
+      "bytes": 1409816,
+      "metadata": "assets/models/studio/vela12.json"
+    },
+    {
+      "id": "lyra10",
+      "name": "LYRA-10",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 10,
+        "coupled": 8,
+        "passive": 0
+      },
+      "bytes": 2414540,
+      "metadata": "assets/models/studio/lyra10.json"
+    },
+    {
+      "id": "sora8",
+      "name": "SORA-8",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 8,
+        "coupled": 8,
+        "passive": 4
+      },
+      "bytes": 2253460,
+      "metadata": "assets/models/studio/sora8.json"
+    },
+    {
+      "id": "talon6",
+      "name": "TALON-6",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 6,
+        "coupled": 0,
+        "passive": 9
+      },
+      "bytes": 1219016,
+      "metadata": "assets/models/studio/talon6.json"
+    },
+    {
+      "id": "nacre18",
+      "name": "NACRE-18",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 18,
+        "coupled": 4,
+        "passive": 0
+      },
+      "bytes": 3125012,
+      "metadata": "assets/models/studio/nacre18.json"
+    },
+    {
+      "id": "helix15",
+      "name": "HELIX-15",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 15,
+        "coupled": 4,
+        "passive": 0
+      },
+      "bytes": 1819160,
+      "metadata": "assets/models/studio/helix15.json"
+    },
+    {
+      "id": "reed11",
+      "name": "REED-12",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 12,
+        "coupled": 0,
+        "passive": 5
+      },
+      "bytes": 2815724,
+      "metadata": "assets/models/studio/reed11.json"
+    },
+    {
+      "id": "kestrel17",
+      "name": "KESTREL-17",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 17,
+        "coupled": 4,
+        "passive": 1
+      },
+      "bytes": 3425176,
+      "metadata": "assets/models/studio/kestrel17.json"
+    },
+    {
+      "id": "mano",
+      "name": "MANO Human Hand",
+      "category": "hand",
+      "side": "right",
+      "counts": {
+        "active": 22,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 66512,
+      "metadata": "assets/models/studio/mano.json"
+    },
+    {
+      "id": "wuji_hand_2",
+      "name": "WUJI Hand 2 Beta 1",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 20,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 1979896,
+      "metadata": "assets/models/studio/wuji_hand_2.json"
+    },
+    {
+      "id": "sharpa_wave_01",
+      "name": "Sharpa Wave 01",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 22,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 2619672,
+      "metadata": "assets/models/studio/sharpa_wave_01.json"
+    },
+    {
+      "id": "tesollo_dg5f",
+      "name": "Tesollo DELTO Gripper DG-5F",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 20,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 1559236,
+      "metadata": "assets/models/studio/tesollo_dg5f.json"
+    },
+    {
+      "id": "unitree_dex5_1",
+      "name": "Unitree Dex5-1",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 20,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 2453888,
+      "metadata": "assets/models/studio/unitree_dex5_1.json"
+    },
+    {
+      "id": "shadow_hand_e",
+      "name": "Shadow Dexterous Hand E-Series",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 20,
+        "coupled": 4,
+        "passive": 0
+      },
+      "bytes": 623936,
+      "metadata": "assets/models/studio/shadow_hand_e.json"
+    },
+    {
+      "id": "midas_hand",
+      "name": "MIDAS Hand",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 19,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 6242920,
+      "metadata": "assets/models/studio/midas_hand.json"
+    },
+    {
+      "id": "ruka_v2",
+      "name": "RUKA-v2",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 17,
+        "coupled": 4,
+        "passive": 0
+      },
+      "bytes": 5139324,
+      "metadata": "assets/models/studio/ruka_v2.json"
+    },
+    {
+      "id": "inspire_rh56dfx",
+      "name": "Inspire RH56DFX",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 6,
+        "coupled": 6,
+        "passive": 0
+      },
+      "bytes": 1144964,
+      "metadata": "assets/models/studio/inspire_rh56dfx.json"
+    },
+    {
+      "id": "robotera_xhand1_pro",
+      "name": "RobotEra XHAND1 Pro",
+      "category": "robot",
+      "side": "right",
+      "counts": {
+        "active": 21,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 2494396,
+      "metadata": "assets/models/studio/robotera_xhand1_pro.json"
+    },
+    {
+      "id": "supr_female_foot",
+      "name": "SUPR Female Foot (5-Toe Direct Drive)",
+      "category": "others",
+      "side": "right",
+      "counts": {
+        "active": 5,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 20364,
+      "metadata": "assets/models/studio/supr_female_foot.json"
+    }
+  ]
+}

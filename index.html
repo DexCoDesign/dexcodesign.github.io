@@ -6,11 +6,15 @@
   <meta name="description" content="DexCoDesign research project page." />
   <title>DexCoDesign</title>
   <link rel="stylesheet" href="assets/css/styles.css?v=20261016-benchmark-small" />
+  <link rel="stylesheet" href="assets/css/hand-studio.css?v=1" />
+  <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
+  <script type="module" src="assets/js/hand-studio.js?v=1"></script>
 </head>
 <body>
   <nav class="site-nav" aria-label="Main navigation">
     <a class="nav-brand" href="#top">DexCoDesign</a>
     <div class="nav-links">
+      <a href="#hand-studio">Hand Studio</a>
       <a href="#abstract">Abstract</a>
       <a href="#method">Method</a>
       <a href="#morphology">Morphology</a>
@@ -31,6 +35,25 @@
   </header>
 
   <main class="page" id="project">
+    <section class="section-shell" id="hand-studio" aria-label="Interactive hand studio">
+      <div class="studio-heading"><div><p class="eyebrow eyebrow--dark">Explore the embodiments</p><h2>Hand Studio</h2></div><p>Right-side models. Drag to explore. Move a joint.</p></div>
+      <div class="studio">
+        <div class="studio-toolbar">
+          <label>Collection<select id="studio-category" aria-label="Model category"><option value="hand">Hand</option><option value="robot">Robot hand</option><option value="ai" selected>AI gen</option><option value="others">Others</option></select></label>
+          <label class="studio-model-label">Model<select id="studio-model" aria-label="Studio model"></select></label>
+          <span id="studio-counts"></span>
+        </div>
+        <div class="studio-layout">
+          <div class="studio-main">
+            <div id="studio-viewport" tabindex="0" aria-label="Interactive 3D hand. Drag to orbit; scroll to zoom."><div class="studio-overlay"><span id="studio-name"></span><span>DRAG TO ORBIT · SCROLL TO ZOOM</span></div><div id="studio-loading" role="status">Loading studio…</div></div>
+            <div class="studio-actions" id="studio-actions"></div>
+            <p class="studio-status" id="studio-status" role="status"></p>
+          </div>
+          <aside id="studio-controls" aria-label="Joint controls"></aside>
+        </div>
+        <div class="studio-footnote">Browser-based kinematic preview · Coupled joints follow their masters; spring-passive joints stay at rest. No contact or grasp simulation. AI designs are mechanical concepts, not fabrication-validated hardware.</div>
+      </div>
+    </section>
     <section class="paper-header section-shell">
       <p class="venue">[Conference / Journal · Year]</p>
       <h2 class="paper-title">[Full Paper Title]</h2>

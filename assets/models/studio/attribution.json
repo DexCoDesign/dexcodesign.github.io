@@ -1,0 +1,19 @@
+{
+  "purpose": "Right-side visual/kinematic research display; no manufacturer endorsement.",
+  "source_of_truth": "Skynet DexCoDesign assets/robot_hands/direct_motor, commit 3fc9c1f26882f4baee43c419d247ece9fb4a3109",
+  "modifications": "Visual-only GLB conversion and mesh reduction. Kinematic transforms and limits preserved. AI meshes mirrored into the right-side convention. Appearance corrections documented in per-visual metadata and the repository README.",
+  "models": {
+    "mano": {"source": "https://github.com/facebookresearch/spider", "notice": "licenses/mano-LICENSE-SPIDER", "description": "Articulated rigid MANO approximation from SPIDER, not the official MANO parameter distribution."},
+    "wuji_hand_2": {"source": "https://github.com/wuji-technology/wuji-description", "notice": "licenses/wuji_hand_2-LICENSE"},
+    "sharpa_wave_01": {"source": "https://github.com/sharpa-robotics/sharpa-urdf-usd-xml", "notice": "licenses/sharpa_wave_01-LICENSE.txt"},
+    "tesollo_dg5f": {"source": "https://github.com/tesollodelto/tesollo_model", "notice": "licenses/tesollo_dg5f-LICENSE"},
+    "unitree_dex5_1": {"source": "https://github.com/unitreerobotics/unitree_ros", "notice": "licenses/unitree_dex5_1-LICENSE"},
+    "shadow_hand_e": {"source": "https://github.com/shadow-robot/sr_common", "notice": "licenses/shadow_hand_e-LICENSE"},
+    "midas_hand": {"source": "https://github.com/midas-hand-org/midas_hand_mujoco", "notice": "licenses/midas_hand-LICENSE"},
+    "ruka_v2": {"source": "https://github.com/ruka-hand-v2/RUKA-v2", "notice": "licenses/ruka_v2-LICENSE"},
+    "inspire_rh56dfx": {"source": "https://github.com/correlllab/h1_mujoco", "notice": "licenses/inspire_rh56dfx-LICENSE"},
+    "robotera_xhand1_pro": {"source": "User-provided RobotEra era_urdf XHAND1 Pro asset, preserved from Skynet", "description": "Original component colors retained; no independent asset license is asserted."},
+    "supr_female_foot": {"source": "https://supr.is.tue.mpg.de/", "description": "Project's five-toe articulated research asset; no independent redistribution license is asserted."},
+    "ai_concepts": {"source": "ArcusHand local concept generator", "description": "Ten generated mechanisms; not fabrication-certified, not replicas of commercial hand designs."}
+  }
+}
