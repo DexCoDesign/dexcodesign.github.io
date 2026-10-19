@@ -1,4 +1,4 @@
-<robot name="TALON-6-dual-opposition">
+<robot name="TALON-6-right-hand">
   <link name="palm">
     <visual>
       <material name="olive">
@@ -30,15 +30,6 @@
       </material>
       <geometry>
         <mesh filename="meshes/palm_inlay.obj" />
-      </geometry>
-    </visual>
-    <visual>
-      <origin xyz="-0.05 0.015 0.052" rpy="0 -1.5707963267948966 0" />
-      <material name="olive">
-        <color rgba="0.4 0.51 0.43 1.0" />
-      </material>
-      <geometry>
-        <mesh filename="meshes/thumb_bridge.obj" />
       </geometry>
     </visual>
     <visual>
@@ -123,39 +114,12 @@
       </geometry>
     </visual>
     <visual>
-      <origin xyz="0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
+      <origin xyz="0.066 0.017 0.057" rpy="1.5707963267948966 0 0" />
       <material name="alloy">
         <color rgba="0.5 0.54 0.57 1.0" />
       </material>
       <geometry>
         <mesh filename="meshes/motor_cover.obj" />
-      </geometry>
-    </visual>
-    <visual>
-      <origin xyz="0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
-      <material name="gold">
-        <color rgba="0.78 0.56 0.24 1.0" />
-      </material>
-      <geometry>
-        <mesh filename="meshes/motor_cap.obj" />
-      </geometry>
-    </visual>
-    <visual>
-      <origin xyz="-0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
-      <material name="alloy">
-        <color rgba="0.5 0.54 0.57 1.0" />
-      </material>
-      <geometry>
-        <mesh filename="meshes/motor_cover.obj" />
-      </geometry>
-    </visual>
-    <visual>
-      <origin xyz="-0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
-      <material name="gold">
-        <color rgba="0.78 0.56 0.24 1.0" />
-      </material>
-      <geometry>
-        <mesh filename="meshes/motor_cap.obj" />
       </geometry>
     </visual>
   </link>
@@ -291,40 +255,34 @@
     <axis xyz="-1 0 0" />
     <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
   </joint>
-  <link name="radial_thumb_digit">
+  <link name="thumb_hub">
     <visual>
+      <origin xyz="0 0 0" rpy="1.5707963267948966 0 0" />
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/thumb.obj" />
+        <mesh filename="meshes/motor_cover.obj" />
       </geometry>
     </visual>
     <visual>
-      <material name="sage">
-        <color rgba="0.72 0.77 0.66 1.0" />
-      </material>
-      <geometry>
-        <mesh filename="meshes/thumb_pad.obj" />
-      </geometry>
-    </visual>
-    <visual>
+      <origin xyz="0 0 0" rpy="1.5707963267948966 0 0" />
       <material name="gold">
         <color rgba="0.78 0.56 0.24 1.0" />
       </material>
       <geometry>
-        <mesh filename="meshes/thumb_spine.obj" />
+        <mesh filename="meshes/motor_cap.obj" />
       </geometry>
     </visual>
   </link>
-  <joint name="radial_thumb_flex" type="revolute">
+  <joint name="thumb_opposition" type="revolute">
     <parent link="palm" />
-    <child link="radial_thumb_digit" />
-    <origin xyz="0.075 0.027 0.065" rpy="0 0 1.5707963267948966" />
-    <axis xyz="-1 0 0" />
-    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+    <child link="thumb_hub" />
+    <origin xyz="0.075 0.027 0.065" rpy="0 0 1.2217304763960306" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.3490658503988659" upper="0.6108652381980153" effort="1.5" velocity="2.0" />
   </joint>
-  <link name="ulnar_thumb_digit">
+  <link name="thumb_digit">
     <visual>
       <material name="olive">
         <color rgba="0.4 0.51 0.43 1.0" />
@@ -350,10 +308,10 @@
       </geometry>
     </visual>
   </link>
-  <joint name="ulnar_thumb_flex" type="revolute">
-    <parent link="palm" />
-    <child link="ulnar_thumb_digit" />
-    <origin xyz="-0.075 0.027 0.065" rpy="0 0 -1.5707963267948966" />
+  <joint name="thumb_flex" type="revolute">
+    <parent link="thumb_hub" />
+    <child link="thumb_digit" />
+    <origin xyz="0 0 0" rpy="0.2617993877991494 0 0" />
     <axis xyz="-1 0 0" />
     <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
   </joint>

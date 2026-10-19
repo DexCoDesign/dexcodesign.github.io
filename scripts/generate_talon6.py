@@ -116,44 +116,41 @@ def save_meshes():
         "palm_inlay": front_plate([(-.032, .000), (.032, .000), (.040, .013),
                                    (.035, .024), (-.035, .024), (-.040, .013)], .0222, .0229),
     }
+    # This is a thumb, not a fifth full-length finger. Keep its closed shell
+    # and inlay, but shorten the distal reach relative to the four fingers.
+    for name in ("thumb", "thumb_pad", "thumb_spine"):
+        shapes[name].apply_scale((1, 1, .82))
     for name, mesh in shapes.items():
         (MESHES / f"{name}.obj").write_text(mesh.export(file_type="obj").rstrip() + "\n")
 
 
 def build_urdf():
-    root = ET.Element("robot", name="TALON-6-dual-opposition")
+    root = ET.Element("robot", name="TALON-6-right-hand")
     palm = ET.SubElement(root, "link", name="palm")
     for mesh, color in (("palm_shell", "olive"), ("palm_face", "sage"),
                         ("wrist_collar", "graphite"), ("palm_inlay", "alloy")):
         visual(palm, mesh, color)
-    for side in (-1, 1):
-        # Short closed side spars carry the two opposing drives; neither
-        # thumb hangs from an unsupported stalk ahead of the palm.
-        visual(palm, "thumb_bridge", "olive", (side*.050, .015, .052),
-               (0, side*math.pi/2, 0))
-    # Six compact rotary actuators sit inside these flush shrouds; none needs
-    # an exposed fingertip motor or an extra passive finger joint.
+    # Only the radial side carries a thumb. The bridge reaches the palm shell,
+    # avoiding the unsupported forward stalk of the older TALON concepts.
+    visual(palm, "thumb_bridge", "olive", (.050, .015, .052),
+           (0, math.pi/2, 0))
+    # Four finger drives; the right thumb gets two orthogonal drives at its
+    # base (opposition and flexion), for six active joints in five digits.
     digits = [
         ("index", .039, 0, .049, 0),
         ("middle", .013, 0, .049, 0),
         ("ring", -.013, 0, .049, 0),
         ("little", -.039, 0, .049, 0),
-        ("radial_thumb", .075, .027, .065, 90),
-        ("ulnar_thumb", -.075, .027, .065, -90),
     ]
     for name, x, y, z, yaw in digits:
-        thumb = "thumb" in name
-        # Thumb motors lie within the side spars, rather than protruding
-        # beyond a distal fingertip.
-        motor_rpy = (math.pi/2, 0, 0) if thumb else None
-        visual(palm, "motor_cover", "alloy", (x, y, z), motor_rpy)
-        visual(palm, "motor_cap", "gold", (x, y, z), motor_rpy)
+        visual(palm, "motor_cover", "alloy", (x, y, z))
+        visual(palm, "motor_cap", "gold", (x, y, z))
         link = ET.SubElement(root, "link", name=f"{name}_digit")
-        visual(link, "thumb" if thumb else "finger", "olive" if thumb else "sage")
+        visual(link, "finger", "sage")
         # The contact face is part of the colored shell, not a black sticker
         # (TALON's earlier design explicitly removed those grip patches).
-        visual(link, "thumb_pad" if thumb else "finger_pad", "sage" if thumb else "olive")
-        visual(link, "thumb_spine" if thumb else "finger_spine", "gold")
+        visual(link, "finger_pad", "olive")
+        visual(link, "finger_spine", "gold")
         joint = ET.SubElement(root, "joint", name=f"{name}_flex", type="revolute")
         ET.SubElement(joint, "parent", link="palm")
         ET.SubElement(joint, "child", link=f"{name}_digit")
@@ -162,43 +159,77 @@ def build_urdf():
         ET.SubElement(joint, "axis", xyz="-1 0 0")
         ET.SubElement(joint, "limit", lower="0", upper=str(math.radians(85)),
                       effort="1.5", velocity="2.0")
+
+    # The opposition motor is housed in the side bridge. Its rotating hub
+    # encloses the perpendicular flexion drive; there is no distal motor.
+    visual(palm, "motor_cover", "alloy", (.066, .017, .057),
+           (math.pi/2, 0, 0))
+    thumb_hub = ET.SubElement(root, "link", name="thumb_hub")
+    visual(thumb_hub, "motor_cover", "olive", (0, 0, 0),
+           (math.pi/2, 0, 0))
+    visual(thumb_hub, "motor_cap", "gold", (0, 0, 0),
+           (math.pi/2, 0, 0))
+    opposition = ET.SubElement(root, "joint", name="thumb_opposition", type="revolute")
+    ET.SubElement(opposition, "parent", link="palm")
+    ET.SubElement(opposition, "child", link="thumb_hub")
+    ET.SubElement(opposition, "origin", xyz="0.075 0.027 0.065",
+                  rpy=f"0 0 {math.radians(70)}")
+    ET.SubElement(opposition, "axis", xyz="0 0 1")
+    ET.SubElement(opposition, "limit", lower=str(math.radians(-20)),
+                  upper=str(math.radians(35)), effort="1.5", velocity="2.0")
+    thumb = ET.SubElement(root, "link", name="thumb_digit")
+    visual(thumb, "thumb", "olive")
+    visual(thumb, "thumb_pad", "sage")
+    visual(thumb, "thumb_spine", "gold")
+    flex = ET.SubElement(root, "joint", name="thumb_flex", type="revolute")
+    ET.SubElement(flex, "parent", link="thumb_hub")
+    ET.SubElement(flex, "child", link="thumb_digit")
+    # A small outward rest cant makes the neutral silhouette unmistakably
+    # thumb-like; flexion sweeps it back toward the index finger.
+    ET.SubElement(flex, "origin", xyz="0 0 0", rpy=f"{math.radians(15)} 0 0")
+    ET.SubElement(flex, "axis", xyz="-1 0 0")
+    ET.SubElement(flex, "limit", lower="0", upper=str(math.radians(85)),
+                  effort="1.5", velocity="2.0")
     ET.indent(root, space="  ")
     (OUT / "hand.urdf").write_text(ET.tostring(root, encoding="unicode") + "\n")
     names = [f"{name}_flex" for name, *_ in digits]
-    def pose(main, thumbs):
-        return {n: (thumbs if "thumb" in n else main) for n in names}
+    def pose(fingers, opposition, thumb_flexion):
+        return {n: fingers for n in names} | {
+            "thumb_opposition": opposition, "thumb_flex": thumb_flexion}
     poses = {
-        "neutral": pose(8, 8),
-        "spread": pose(0, 0),
-        "wrap": pose(66, 66),
-        "pinch": {n: (15 if n in ("index_flex", "little_flex") else
-                       30 if "thumb" in n else 8)
-                  for n in names},
+        "neutral": pose(8, 0, 8),
+        "spread": pose(0, -15, 0),
+        "wrap": pose(66, 20, 66),
+        "pinch": {n: (15 if n == "index_flex" else 8) for n in names} | {
+            "thumb_opposition": 20, "thumb_flex": 40},
     }
     spec = {
-        "controls": [{"name": f"{name}_flex", "label": "Base flex",
-                      "group": name.replace("_", " ").title()} for name, *_ in digits],
+        "controls": ([{"name": f"{name}_flex", "label": "Base flex",
+                      "group": name.title()} for name, *_ in digits] +
+                     [{"name": "thumb_opposition", "label": "Opposition", "group": "Thumb"},
+                      {"name": "thumb_flex", "label": "Flex", "group": "Thumb"}]),
         "passive": [], "actuator_couplings": [], "poses": poses,
-        "pinch_note": "Two opposed fingertip pairs converge in the six-axis preview; grasp forces and force closure are not validated.",
-        "concept_note": "Six-digit gripper concept · six direct-drive base axes · enclosed motors · no passive joints.",
+        "pinch_note": "The right thumb and index fingertip converge in the six-axis preview; grasp forces and force closure are not validated.",
+        "concept_note": "Asymmetric right-hand gripper concept · five digits, six direct-drive axes (four fingers × 1 + thumb × 2) · enclosed motors · no passive joints.",
     }
     (OUT / "specification.json").write_text(json.dumps(spec, indent=2) + "\n")
 
 
 def validate_pinch():
-    """Check both independent opposing pairs approach without tip overlap."""
-    def finger(side, angle):
+    """Check the right thumb/index pair approaches without tip overlap."""
+    def finger(angle):
         a = math.radians(angle)
-        return np.array((side*.039, .004*math.cos(a)+.074*math.sin(a),
+        return np.array((.039, .004*math.cos(a)+.074*math.sin(a),
                          .049+.074*math.cos(a)-.004*math.sin(a)))
-    def thumb(side, angle):
-        a = math.radians(angle)
-        return np.array((side*(.075-.003*math.cos(a)-.073*math.sin(a)), .027,
-                         .065+.073*math.cos(a)-.003*math.sin(a)))
-    for side in (-1, 1):
-        closed = np.linalg.norm(finger(side, 15)-thumb(side, 30))
-        open_ = np.linalg.norm(finger(side, 8)-thumb(side, 8))
-        assert .008 < closed < .012 and open_ > .020, (side, closed, open_)
+    def thumb(opposition, angle):
+        a = math.radians(angle - 15)
+        yaw = math.radians(70 + opposition)
+        y = .003*math.cos(a)+.073*.82*math.sin(a)
+        return np.array((.075-math.sin(yaw)*y, .027+math.cos(yaw)*y,
+                         .065+.073*.82*math.cos(a)-.003*math.sin(a)))
+    closed = np.linalg.norm(finger(15)-thumb(20, 40))
+    open_ = np.linalg.norm(finger(8)-thumb(0, 8))
+    assert .008 < closed < .012 and open_ > .020, (closed, open_)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '7';
+const studioVersion = '8';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
