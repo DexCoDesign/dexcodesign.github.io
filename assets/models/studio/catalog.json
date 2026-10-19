@@ -74,9 +74,9 @@
       "counts": {
         "active": 6,
         "coupled": 0,
-        "passive": 9
+        "passive": 0
       },
-      "bytes": 1219016,
+      "bytes": 89692,
       "metadata": "assets/models/studio/talon6.json"
     },
     {
@@ -167,7 +167,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2619672,
+      "bytes": 2619676,
       "metadata": "assets/models/studio/sharpa_wave_01.json"
     },
     {
@@ -193,7 +193,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2411564,
+      "bytes": 2411744,
       "metadata": "assets/models/studio/unitree_dex5_1.json"
     },
     {

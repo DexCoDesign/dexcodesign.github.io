@@ -47,16 +47,23 @@ def appearance(mid, link, color, source, recovered):
         # light casing with dark finger contact sections, not a solid black hand.
         rgba=[.79,.81,.82,1] if link=='base' or 'proximal' in link else [.24,.26,.28,1]
         return np.array(rgba),'photo-approximation-Inspire-RH56DFX'
-    if mid=='mano' and source=='unspecified-fallback':return np.array([.5,.5,.5,1]),'source-mujoco-default'
+    if mid=='mano' and source=='unspecified-fallback':
+        # Match the SUPR foot's human-skin display material. Geometry and
+        # the source URDF are unchanged.
+        return np.array([.78,.48,.37,1]),'display-skin-match-supr-foot'
     if mid=='tesollo_dg5f' and source=='unspecified-fallback':
         rgba=([.12,.13,.14,1] if 'mount' in link or 'tip' in link else
               [.86,.87,.88,1] if 'palm' in link or 'base' in link else [.61,.64,.66,1])
         return np.array(rgba),'photo-approximation-TESOLLO-DG5F'
     if mid=='sharpa_wave_01' and color[1]>.95 and color[0]<.3:
         return np.array([.12,.13,.14,1]),'photo-approximation-tactile-elastomer'
-    if mid=='unitree_dex5_1' and color[3]<1:
-        color=color.copy();color[3]=1
-        return color,'source-rgb-opaque-display-casing'
+    if mid=='sharpa_wave_01':
+        return np.array([.67,.70,.73,1]),'display-silver-casing'
+    if mid=='unitree_dex5_1':
+        # A little value separation makes the black articulated shell readable
+        # against the studio's dark backdrop without changing its hue.
+        value = .29 if link=='base_link00' else .19 if re.search(r'Link_[1-5]4R$',link) else .24
+        return np.array([value,value+.015,value+.025,1]),'display-opaque-charcoal-black-casing'
     return color,source
 
 
@@ -174,9 +181,13 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                     mesh = reduced
             # Native MuJoCo used smooth mesh normals.
             _ = mesh.vertex_normals
+            # The studio intentionally has no HDR environment map. A high
+            # metallic factor would make silver look nearly black here.
+            metal = .05 if mid=='sharpa_wave_01' and rgba[0]>.3 else .12
+            rough = .46 if mid=='sharpa_wave_01' and rgba[0]>.3 else .56
             mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(
                 baseColorFactor=np.clip(np.array(rgba)*255, 0, 255).astype(np.uint8),
-                metallicFactor=.12, roughnessFactor=.56))
+                metallicFactor=metal, roughnessFactor=rough))
             scene.add_geometry(mesh, node_name=f'visual__{link.get("name")}__{gi}', parent_node_name='link__' + link.get('name'))
     if spec:
         poses = {k: {n: float(np.radians(v)) for n, v in values.items()} for k, values in spec['poses'].items()}
@@ -199,6 +210,7 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                                 [1,.35,.28] if mid in {'sharpa_wave_01','tesollo_dg5f'} else
                                 [.42,1,.28] if mid=='supr_female_foot' else [-.42,-1,.28],
                  pinch_note=spec.get('pinch_note') if spec else None,
+                 concept_note=spec.get('concept_note') if spec else None,
                  semantics='Visual meshes and exact joint forward kinematics. No physics, contact, grasp or payload validation in the browser.')
     (OUT / f'{mid}.json').write_text(json.dumps(model, separators=(',', ':')) + '\n')
     print(mid, len(glb), len(controls), 'controls', flush=True)
@@ -217,7 +229,8 @@ def main():
         records=[r for r in json.loads((OUT/'catalog.json').read_text())['records'] if r['category']=='ai']
     ai_rows=[] if args.skip_ai else json.loads((args.ai_root / 'catalog.json').read_text())
     for row in sorted(ai_rows, key=lambda row: row['id']!='lyra10'):
-        base = args.ai_root / 'models' / row['id']
+        # TALON-6's complete revised source is versioned with the website.
+        base = ROOT/'assets/models/studio/sources/talon6' if row['id']=='talon6' else args.ai_root / 'models' / row['id']
         spec = json.loads((base / 'specification.json').read_text())
         records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec, 'Locally generated mechanical concept'))
     if args.skynet_root:

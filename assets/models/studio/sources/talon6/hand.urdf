@@ -1,0 +1,360 @@
+<robot name="TALON-6-dual-opposition">
+  <link name="palm">
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/palm_shell.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/palm_face.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="graphite">
+        <color rgba="0.13 0.15 0.17 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/wrist_collar.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/palm_inlay.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.05 0.015 0.052" rpy="0 -1.5707963267948966 0" />
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_bridge.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.05 0.015 0.052" rpy="0 1.5707963267948966 0" />
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_bridge.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.039 0 0.049" rpy="0 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.039 0 0.049" rpy="0 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.013 0 0.049" rpy="0 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.013 0 0.049" rpy="0 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.013 0 0.049" rpy="0 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.013 0 0.049" rpy="0 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.039 0 0.049" rpy="0 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.039 0 0.049" rpy="0 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
+      <material name="alloy">
+        <color rgba="0.5 0.54 0.57 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cover.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.075 0.027 0.065" rpy="1.5707963267948966 0 0" />
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/motor_cap.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <link name="index_digit">
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="index_flex" type="revolute">
+    <parent link="palm" />
+    <child link="index_digit" />
+    <origin xyz="0.039 0 0.049" rpy="0 0 0.0" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+  <link name="middle_digit">
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="middle_flex" type="revolute">
+    <parent link="palm" />
+    <child link="middle_digit" />
+    <origin xyz="0.013 0 0.049" rpy="0 0 0.0" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+  <link name="ring_digit">
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="ring_flex" type="revolute">
+    <parent link="palm" />
+    <child link="ring_digit" />
+    <origin xyz="-0.013 0 0.049" rpy="0 0 0.0" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+  <link name="little_digit">
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/finger_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="little_flex" type="revolute">
+    <parent link="palm" />
+    <child link="little_digit" />
+    <origin xyz="-0.039 0 0.049" rpy="0 0 0.0" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+  <link name="radial_thumb_digit">
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="radial_thumb_flex" type="revolute">
+    <parent link="palm" />
+    <child link="radial_thumb_digit" />
+    <origin xyz="0.075 0.027 0.065" rpy="0 0 1.5707963267948966" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+  <link name="ulnar_thumb_digit">
+    <visual>
+      <material name="olive">
+        <color rgba="0.4 0.51 0.43 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="sage">
+        <color rgba="0.72 0.77 0.66 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_pad.obj" />
+      </geometry>
+    </visual>
+    <visual>
+      <material name="gold">
+        <color rgba="0.78 0.56 0.24 1.0" />
+      </material>
+      <geometry>
+        <mesh filename="meshes/thumb_spine.obj" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="ulnar_thumb_flex" type="revolute">
+    <parent link="palm" />
+    <child link="ulnar_thumb_digit" />
+    <origin xyz="-0.075 0.027 0.065" rpy="0 0 -1.5707963267948966" />
+    <axis xyz="-1 0 0" />
+    <limit lower="0" upper="1.4835298641951802" effort="1.5" velocity="2.0" />
+  </joint>
+</robot>

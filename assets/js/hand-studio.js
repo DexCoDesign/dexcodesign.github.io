@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '6';
+const studioVersion = '7';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
@@ -13,8 +13,9 @@ const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setClearColor(0,0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.NeutralToneMapping;
-renderer.toneMappingExposure = 1.35;
+// Keep authored material colors legible: a uniform neutral fill, no filmic
+// shoulder that turns pale metals and skin into the same gray-white value.
+renderer.toneMapping = THREE.NoToneMapping;
 viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
@@ -27,9 +28,9 @@ orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
-scene.add(new THREE.AmbientLight(0xffffff,.62));
+scene.add(new THREE.AmbientLight(0xffffff,.78));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
-  const light=new THREE.DirectionalLight(0xffffff,.2);light.position.set(...pos);scene.add(light);
+  const light=new THREE.DirectionalLight(0xffffff,.12);light.position.set(...pos);scene.add(light);
 }
 const palmView = {
   wuji_hand_2:[-.42,-1,.28], sharpa_wave_01:[1,.35,.28], tesollo_dg5f:[1,.35,.28],
@@ -124,7 +125,7 @@ async function choose(id){
     const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
-    selectedPose='neutral';buttons();$('status').textContent=model.category==='ai'?'Five-finger, hand-only concept · direct-drive actuators · closed motor enclosures.':'Skynet asset snapshot · visual meshes with original joint kinematics.';
+    selectedPose='neutral';buttons();$('status').textContent=model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     $('loading').hidden=true;dirty=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading').textContent='Model could not load. '+error.message;console.error(error);}}
 }

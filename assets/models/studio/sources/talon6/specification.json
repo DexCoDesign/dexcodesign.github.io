@@ -1,0 +1,72 @@
+{
+  "controls": [
+    {
+      "name": "index_flex",
+      "label": "Base flex",
+      "group": "Index"
+    },
+    {
+      "name": "middle_flex",
+      "label": "Base flex",
+      "group": "Middle"
+    },
+    {
+      "name": "ring_flex",
+      "label": "Base flex",
+      "group": "Ring"
+    },
+    {
+      "name": "little_flex",
+      "label": "Base flex",
+      "group": "Little"
+    },
+    {
+      "name": "radial_thumb_flex",
+      "label": "Base flex",
+      "group": "Radial Thumb"
+    },
+    {
+      "name": "ulnar_thumb_flex",
+      "label": "Base flex",
+      "group": "Ulnar Thumb"
+    }
+  ],
+  "passive": [],
+  "actuator_couplings": [],
+  "poses": {
+    "neutral": {
+      "index_flex": 8,
+      "middle_flex": 8,
+      "ring_flex": 8,
+      "little_flex": 8,
+      "radial_thumb_flex": 8,
+      "ulnar_thumb_flex": 8
+    },
+    "spread": {
+      "index_flex": 0,
+      "middle_flex": 0,
+      "ring_flex": 0,
+      "little_flex": 0,
+      "radial_thumb_flex": 0,
+      "ulnar_thumb_flex": 0
+    },
+    "wrap": {
+      "index_flex": 66,
+      "middle_flex": 66,
+      "ring_flex": 66,
+      "little_flex": 66,
+      "radial_thumb_flex": 66,
+      "ulnar_thumb_flex": 66
+    },
+    "pinch": {
+      "index_flex": 15,
+      "middle_flex": 8,
+      "ring_flex": 8,
+      "little_flex": 15,
+      "radial_thumb_flex": 30,
+      "ulnar_thumb_flex": 30
+    }
+  },
+  "pinch_note": "Two opposed fingertip pairs converge in the six-axis preview; grasp forces and force closure are not validated.",
+  "concept_note": "Six-digit gripper concept \u00b7 six direct-drive base axes \u00b7 enclosed motors \u00b7 no passive joints."
+}
