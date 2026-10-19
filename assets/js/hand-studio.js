@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '4';
+const studioVersion = '6';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
@@ -13,8 +13,8 @@ const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setClearColor(0,0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// Display authored material colors without a tone mapper changing their hue.
-renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.35;
 viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
@@ -27,10 +27,15 @@ orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
-scene.add(new THREE.AmbientLight(0xffffff,.8));
+scene.add(new THREE.AmbientLight(0xffffff,.62));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
-  const light=new THREE.DirectionalLight(0xffffff,.3);light.position.set(...pos);scene.add(light);
+  const light=new THREE.DirectionalLight(0xffffff,.2);light.position.set(...pos);scene.add(light);
 }
+const palmView = {
+  wuji_hand_2:[-.42,-1,.28], sharpa_wave_01:[1,.35,.28], tesollo_dg5f:[1,.35,.28],
+  unitree_dex5_1:[-.42,-1,.28], shadow_hand_e:[-.42,-1,.28], midas_hand:[-.42,-1,.28],
+  ruka_v2:[-.42,-1,.28], inspire_rh56dfx:[-.42,-1,.28], robotera_xhand1_pro:[-.42,-1,.28],
+};
 const loader = new GLTFLoader();
 const axisQ = new THREE.Quaternion();
 new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();dirty=true;}).observe(viewport);
@@ -106,15 +111,19 @@ async function choose(id){
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     const response=await fetch(`${record.metadata}?v=${studioVersion}`);if(!response.ok)throw new Error('Model metadata unavailable');const next=await response.json();
-    const gltf=await loader.loadAsync(next.glb,e=>{if(token===generation&&e.total)$('loading').textContent='Loading model · '+Math.round(e.loaded/e.total*100)+'%';});
+    const gltf=await loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{if(token===generation&&e.total)$('loading').textContent='Loading model · '+Math.round(e.loaded/e.total*100)+'%';});
     if(token!==generation){dispose(gltf.scene);return;}
-    if(root){scene.remove(root);dispose(root);}root=gltf.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
+    if(root){scene.remove(root);dispose(root);}root=gltf.scene;
+    // Older AI GLBs were reflected although their source geometry is already
+    // right-handed. Cancel only that recorded display reflection.
+    if(next.category==='ai'&&next.display_reflection)root.scale.x=-1;
+    root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
     $('name').textContent=model.name;$('counts').textContent=`${model.counts.active} active · ${model.counts.coupled} coupled · ${model.counts.passive} passive`;
     buildControls();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
-    orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
+    orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
     selectedPose='neutral';buttons();$('status').textContent=model.category==='ai'?'Five-finger, hand-only concept · direct-drive actuators · closed motor enclosures.':'Skynet asset snapshot · visual meshes with original joint kinematics.';
     $('loading').hidden=true;dirty=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading').textContent='Model could not load. '+error.message;console.error(error);}}

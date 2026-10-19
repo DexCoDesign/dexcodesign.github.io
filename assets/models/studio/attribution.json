@@ -1,7 +1,7 @@
 {
   "purpose": "Right-side visual/kinematic research display; no manufacturer endorsement.",
   "source_of_truth": "Skynet DexCoDesign assets/robot_hands/direct_motor, commit 3fc9c1f26882f4baee43c419d247ece9fb4a3109",
-  "modifications": "Visual-only GLB conversion and mesh reduction. Kinematic transforms and limits preserved. AI meshes mirrored into the right-side convention. Appearance corrections documented in per-visual metadata and the repository README.",
+  "modifications": "Visual-only GLB conversion and mesh reduction. Kinematic transforms and limits preserved. Older AI display reflections are canceled in the viewer because the source concepts are right-sided. Appearance corrections documented in per-visual metadata and the repository README.",
   "models": {
     "mano": {"source": "https://github.com/facebookresearch/spider", "notice": "licenses/mano-LICENSE-SPIDER", "description": "Articulated rigid MANO approximation from SPIDER, not the official MANO parameter distribution."},
     "wuji_hand_2": {"source": "https://github.com/wuji-technology/wuji-description", "notice": "licenses/wuji_hand_2-LICENSE"},

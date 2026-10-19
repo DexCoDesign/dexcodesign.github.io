@@ -2,6 +2,19 @@
   "version": 1,
   "records": [
     {
+      "id": "lyra10",
+      "name": "LYRA-10",
+      "category": "ai",
+      "side": "right",
+      "counts": {
+        "active": 10,
+        "coupled": 8,
+        "passive": 0
+      },
+      "bytes": 2414540,
+      "metadata": "assets/models/studio/lyra10.json"
+    },
+    {
       "id": "aster20",
       "name": "ASTER-20",
       "category": "ai",
@@ -39,19 +52,6 @@
       },
       "bytes": 1409816,
       "metadata": "assets/models/studio/vela12.json"
-    },
-    {
-      "id": "lyra10",
-      "name": "LYRA-10",
-      "category": "ai",
-      "side": "right",
-      "counts": {
-        "active": 10,
-        "coupled": 8,
-        "passive": 0
-      },
-      "bytes": 2414540,
-      "metadata": "assets/models/studio/lyra10.json"
     },
     {
       "id": "sora8",
@@ -193,7 +193,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2453888,
+      "bytes": 2411564,
       "metadata": "assets/models/studio/unitree_dex5_1.json"
     },
     {
@@ -219,7 +219,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 6242920,
+      "bytes": 9108052,
       "metadata": "assets/models/studio/midas_hand.json"
     },
     {
@@ -232,7 +232,7 @@
         "coupled": 4,
         "passive": 0
       },
-      "bytes": 5139324,
+      "bytes": 9061392,
       "metadata": "assets/models/studio/ruka_v2.json"
     },
     {
@@ -245,7 +245,7 @@
         "coupled": 6,
         "passive": 0
       },
-      "bytes": 1144964,
+      "bytes": 1145132,
       "metadata": "assets/models/studio/inspire_rh56dfx.json"
     },
     {
@@ -258,7 +258,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 2494396,
+      "bytes": 2386424,
       "metadata": "assets/models/studio/robotera_xhand1_pro.json"
     },
     {

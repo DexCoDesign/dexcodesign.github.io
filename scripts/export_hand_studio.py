@@ -43,7 +43,10 @@ def appearance(mid, link, color, source, recovered):
     if mid=='shadow_hand_e' and source=='unspecified-fallback' and link in recovered:
         return np.array(recovered[link]),'restored-source-mjcf'
     if mid=='inspire_rh56dfx' and source=='unspecified-fallback':
-        return np.array([.1,.1,.1,1]),'restored-source-mjcf-visual-default'
+        # The converted URDF omits visual colors. The manufacturer shows a
+        # light casing with dark finger contact sections, not a solid black hand.
+        rgba=[.79,.81,.82,1] if link=='base' or 'proximal' in link else [.24,.26,.28,1]
+        return np.array(rgba),'photo-approximation-Inspire-RH56DFX'
     if mid=='mano' and source=='unspecified-fallback':return np.array([.5,.5,.5,1]),'source-mujoco-default'
     if mid=='tesollo_dg5f' and source=='unspecified-fallback':
         rgba=([.12,.13,.14,1] if 'mount' in link or 'tip' in link else
@@ -161,12 +164,15 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
             groups[tuple(color)].append(mesh)
         for gi, (rgba, pieces) in enumerate(groups.items()):
             mesh = trimesh.util.concatenate(pieces)
+            # STL-derived OBJ files often repeat all three vertices per face.
+            # Decimating that disconnected soup first deletes whole surfaces.
+            mesh.merge_vertices(merge_norm=True,merge_tex=True)
             # Display-only simplification; source geometry never changes.
             if len(mesh.faces) > 15000:
-                mesh = mesh.simplify_quadric_decimation(face_count=15000)
-            # Native MuJoCo used smooth mesh normals. Merge coincident STL
-            # vertices before exporting normals instead of shading each face.
-            mesh.merge_vertices(merge_norm=True,merge_tex=True)
+                reduced = mesh.simplify_quadric_decimation(face_count=15000)
+                if reduced.is_winding_consistent and reduced.area >= mesh.area*.9:
+                    mesh = reduced
+            # Native MuJoCo used smooth mesh normals.
             _ = mesh.vertex_normals
             mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(
                 baseColorFactor=np.clip(np.array(rgba)*255, 0, 255).astype(np.uint8),
@@ -189,7 +195,9 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                  source=provenance, source_urdf_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                  source_mesh_sha256=mesh_hashes, display_reflection='X reflection of AI source; axial vectors reflected with determinant sign' if mirror else None,
                  bounds=scene.bounds.tolist(), materials=color_audit,
-                 view_direction=[-.42,-1,.28] if mid=='mano' else [1,.35,.28] if mid=='tesollo_dg5f' else [.42,1,.28],
+                 view_direction=[.42,1,.28] if category=='ai' else
+                                [1,.35,.28] if mid in {'sharpa_wave_01','tesollo_dg5f'} else
+                                [.42,1,.28] if mid=='supr_female_foot' else [-.42,-1,.28],
                  pinch_note=spec.get('pinch_note') if spec else None,
                  semantics='Visual meshes and exact joint forward kinematics. No physics, contact, grasp or payload validation in the browser.')
     (OUT / f'{mid}.json').write_text(json.dumps(model, separators=(',', ':')) + '\n')
@@ -207,10 +215,11 @@ def main():
     records = []
     if args.skip_ai:
         records=[r for r in json.loads((OUT/'catalog.json').read_text())['records'] if r['category']=='ai']
-    for row in ([] if args.skip_ai else json.loads((args.ai_root / 'catalog.json').read_text())):
+    ai_rows=[] if args.skip_ai else json.loads((args.ai_root / 'catalog.json').read_text())
+    for row in sorted(ai_rows, key=lambda row: row['id']!='lyra10'):
         base = args.ai_root / 'models' / row['id']
         spec = json.loads((base / 'specification.json').read_text())
-        records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec, 'Locally generated mechanical concept', mirror=True))
+        records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec, 'Locally generated mechanical concept'))
     if args.skynet_root:
         registry = json.loads((args.skynet_root / 'direct_motor/registry.json').read_text())
         recovered=recovered_materials(args.skynet_root)
