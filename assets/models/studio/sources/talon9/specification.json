@@ -1,0 +1,99 @@
+{
+  "controls": [
+    {
+      "name": "index_mcp_flex",
+      "label": "Proximal flex",
+      "group": "Index"
+    },
+    {
+      "name": "index_pip_flex",
+      "label": "Distal flex",
+      "group": "Index"
+    },
+    {
+      "name": "middle_mcp_flex",
+      "label": "Proximal flex",
+      "group": "Middle"
+    },
+    {
+      "name": "middle_pip_flex",
+      "label": "Distal flex",
+      "group": "Middle"
+    },
+    {
+      "name": "ring_mcp_flex",
+      "label": "Proximal flex",
+      "group": "Ring"
+    },
+    {
+      "name": "ring_pip_flex",
+      "label": "Distal flex",
+      "group": "Ring"
+    },
+    {
+      "name": "thumb_base_sweep",
+      "label": "Base sweep",
+      "group": "Thumb"
+    },
+    {
+      "name": "thumb_mcp_flex",
+      "label": "Proximal flex",
+      "group": "Thumb"
+    },
+    {
+      "name": "thumb_pip_flex",
+      "label": "Distal flex",
+      "group": "Thumb"
+    }
+  ],
+  "passive": [],
+  "actuator_couplings": [],
+  "poses": {
+    "neutral": {
+      "index_mcp_flex": 5,
+      "middle_mcp_flex": 5,
+      "ring_mcp_flex": 5,
+      "index_pip_flex": 6,
+      "middle_pip_flex": 6,
+      "ring_pip_flex": 6,
+      "thumb_base_sweep": 0,
+      "thumb_mcp_flex": 5,
+      "thumb_pip_flex": 6
+    },
+    "spread": {
+      "index_mcp_flex": 0,
+      "middle_mcp_flex": 0,
+      "ring_mcp_flex": 0,
+      "index_pip_flex": 0,
+      "middle_pip_flex": 0,
+      "ring_pip_flex": 0,
+      "thumb_base_sweep": 24,
+      "thumb_mcp_flex": 0,
+      "thumb_pip_flex": 0
+    },
+    "wrap": {
+      "index_mcp_flex": 58,
+      "middle_mcp_flex": 58,
+      "ring_mcp_flex": 58,
+      "index_pip_flex": 52,
+      "middle_pip_flex": 52,
+      "ring_pip_flex": 52,
+      "thumb_base_sweep": -10,
+      "thumb_mcp_flex": 56,
+      "thumb_pip_flex": 48
+    },
+    "pinch": {
+      "index_mcp_flex": 50,
+      "middle_mcp_flex": 12,
+      "ring_mcp_flex": 12,
+      "index_pip_flex": 26,
+      "middle_pip_flex": 12,
+      "ring_pip_flex": 12,
+      "thumb_base_sweep": 15,
+      "thumb_mcp_flex": 25,
+      "thumb_pip_flex": 56
+    }
+  },
+  "pinch_note": "The thumb and index fingertip converge in the nine-axis preview; grasp forces and force closure are not validated.",
+  "concept_note": "Compact asymmetric four-digit right-hand gripper \u00b7 each opposing digit has two forward-flexing links \u00b7 thumb adds a base sweep for three possible opposing pairs \u00b7 nine enclosed direct-drive axes \u00b7 no passive joints."
+}

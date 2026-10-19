@@ -229,8 +229,10 @@ def main():
         records=[r for r in json.loads((OUT/'catalog.json').read_text())['records'] if r['category']=='ai']
     ai_rows=[] if args.skip_ai else json.loads((args.ai_root / 'catalog.json').read_text())
     for row in sorted(ai_rows, key=lambda row: row['id']!='lyra10'):
-        # TALON-6's complete revised source is versioned with the website.
-        base = ROOT/'assets/models/studio/sources/talon6' if row['id']=='talon6' else args.ai_root / 'models' / row['id']
+        # TALON-9's complete revised source is versioned with the website.
+        if row['id'] == 'talon6':
+            row = {**row, 'id': 'talon9', 'name': 'TALON-9'}
+        base = ROOT/'assets/models/studio/sources/talon9' if row['id']=='talon9' else args.ai_root / 'models' / row['id']
         spec = json.loads((base / 'specification.json').read_text())
         records.append(export_one(base / 'hand.urdf', row['id'], row['name'], 'ai', spec, 'Locally generated mechanical concept'))
     if args.skynet_root:

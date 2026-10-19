@@ -67,17 +67,17 @@
       "metadata": "assets/models/studio/sora8.json"
     },
     {
-      "id": "talon6",
-      "name": "TALON-6",
+      "id": "talon9",
+      "name": "TALON-9",
       "category": "ai",
       "side": "right",
       "counts": {
-        "active": 6,
+        "active": 9,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 84928,
-      "metadata": "assets/models/studio/talon6.json"
+      "bytes": 85648,
+      "metadata": "assets/models/studio/talon9.json"
     },
     {
       "id": "nacre18",

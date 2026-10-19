@@ -5,8 +5,9 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '8';
+const studioVersion = '11';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
+const metadataCache = new Map(), sceneCache = new Map();
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -28,9 +29,9 @@ orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
-scene.add(new THREE.AmbientLight(0xffffff,.78));
+scene.add(new THREE.AmbientLight(0xffffff,.55));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
-  const light=new THREE.DirectionalLight(0xffffff,.12);light.position.set(...pos);scene.add(light);
+  const light=new THREE.DirectionalLight(0xffffff,.16);light.position.set(...pos);scene.add(light);
 }
 const palmView = {
   wuji_hand_2:[-.42,-1,.28], sharpa_wave_01:[1,.35,.28], tesollo_dg5f:[1,.35,.28],
@@ -42,7 +43,20 @@ const axisQ = new THREE.Quaternion();
 new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();dirty=true;}).observe(viewport);
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;dirty=true;}).observe(viewport);
 
-function dispose(object){object.traverse(o=>{o.geometry?.dispose();for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose();});}
+function loading(percent,text='Loading model'){
+  const value=clamp(Math.floor(percent),0,100);
+  $('progress').value=value;$('loading-text').textContent=`${text} · ${value}%`;
+}
+async function getMetadata(record){
+  if(!metadataCache.has(record.id))metadataCache.set(record.id,fetch(`${record.metadata}?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Model metadata unavailable');return r.json();}).catch(e=>{metadataCache.delete(record.id);throw e;}));
+  return metadataCache.get(record.id);
+}
+async function getScene(next,token){
+  if(!sceneCache.has(next.id))sceneCache.set(next.id,loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{
+    if(token===generation&&e.total)loading(Math.min(99,100*e.loaded/e.total));
+  }).then(gltf=>gltf.scene).catch(e=>{sceneCache.delete(next.id);throw e;}));
+  return sceneCache.get(next.id);
+}
 function values(pose){return Object.fromEntries(model.controls.map(c=>[c.name,clamp(pose[c.name]??0,c.lower,c.upper)]));}
 function fingerOf(control){
   const n=control.name.toLowerCase(), g=control.group.toLowerCase(), s=n+' '+g;
@@ -108,13 +122,17 @@ function buildControls(){
   const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{if(!selectedPose||selectedPose==='neutral')selectedPose=model.category==='others'?'flex':'wrap';slow=!slow;if(!slow)target={...current};clockStart=performance.now();buttons();dirty=true;};$('actions').append(b);
 }
 async function choose(id){
-  const token=++generation;slow=false;$('loading').hidden=false;$('loading').textContent='Loading model…';$('controls').replaceChildren();$('actions').replaceChildren();
+  const token=++generation;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
-    const response=await fetch(`${record.metadata}?v=${studioVersion}`);if(!response.ok)throw new Error('Model metadata unavailable');const next=await response.json();
-    const gltf=await loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{if(token===generation&&e.total)$('loading').textContent='Loading model · '+Math.round(e.loaded/e.total*100)+'%';});
-    if(token!==generation){dispose(gltf.scene);return;}
-    if(root){scene.remove(root);dispose(root);}root=gltf.scene;
+    $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
+    $('poster').src=`assets/images/studio/posters/${id}.jpg?v=${studioVersion}`;$('poster').hidden=false;
+    $('poster').onerror=()=>{if(token===generation)$('poster').hidden=true;};
+    const next=await getMetadata(record);
+    if(token!==generation)return;
+    const template=await getScene(next,token);
+    if(token!==generation)return;
+    if(root)scene.remove(root);root=template.clone(true);
     // Older AI GLBs were reflected although their source geometry is already
     // right-handed. Cancel only that recorded display reflection.
     if(next.category==='ai'&&next.display_reflection)root.scale.x=-1;
@@ -126,10 +144,10 @@ async function choose(id){
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
     selectedPose='neutral';buttons();$('status').textContent=model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
-    $('loading').hidden=true;dirty=true;
-  }catch(error){if(token===generation){$('loading').hidden=false;$('loading').textContent='Model could not load. '+error.message;console.error(error);}}
+    loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
+  }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
-function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading').textContent='No models published in this collection yet.';}}
+function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=category;$('model').onchange=()=>choose($('model').value);
 function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
   if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2,a=values(model.poses.neutral),b=values(model.poses[selectedPose]);for(const c of model.controls)current[c.name]=a[c.name]*(1-x)+b[c.name]*x;moving=true;}
@@ -137,4 +155,4 @@ function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!mo
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
 requestAnimationFrame(tick);
-fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;category();}).catch(e=>{$('loading').textContent=e.message;});
+fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;category();}).catch(e=>{$('loading-text').textContent=e.message;});
