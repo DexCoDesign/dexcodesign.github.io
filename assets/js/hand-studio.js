@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '3';
+const studioVersion = '4';
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 const viewport = $('viewport');
@@ -13,10 +13,8 @@ const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setClearColor(0,0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// Preserve the authored GLB material palette. The previous combination of
-// ACES and four strong lights clipped the mostly light-colored hand assets.
-renderer.toneMapping = THREE.NeutralToneMapping;
-renderer.toneMappingExposure = 0.9;
+// Display authored material colors without a tone mapper changing their hue.
+renderer.toneMapping = THREE.NoToneMapping;
 viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
@@ -28,9 +26,10 @@ orbit.rotateSpeed = .7;
 orbit.zoomSpeed = .75;
 orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
-scene.add(new THREE.HemisphereLight(0xe7f2ff,0x697079,.55));
-for (const [color,intensity,pos] of [[0xfff1de,1.05,[.5,.7,.9]],[0xdce9ff,.85,[-.4,-.7,.65]],[0xffffff,.2,[.1,-.2,1]]]) {
-  const light=new THREE.DirectionalLight(color,intensity);light.position.set(...pos);scene.add(light);
+// Neutral, symmetric fill: rotating a model never reveals an unlit side.
+scene.add(new THREE.AmbientLight(0xffffff,.8));
+for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
+  const light=new THREE.DirectionalLight(0xffffff,.3);light.position.set(...pos);scene.add(light);
 }
 const loader = new GLTFLoader();
 const axisQ = new THREE.Quaternion();
