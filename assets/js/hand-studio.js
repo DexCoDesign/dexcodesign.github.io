@@ -49,7 +49,7 @@ class StudioOrbitControls extends OrbitControls {
 const orbit = new StudioOrbitControls(camera,renderer.domElement);
 orbit.enableDamping = false;
 orbit.enablePan = false;
-orbit.rotateSpeed = .65;
+orbit.rotateSpeed = .6;
 orbit.zoomSpeed = .75;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
