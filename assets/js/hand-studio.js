@@ -30,12 +30,27 @@ viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
 camera.up.set(0,0,1);
-const orbit = new OrbitControls(camera,renderer.domElement);
+class StudioOrbitControls extends OrbitControls {
+  update(deltaTime=null){
+    this._quat.setFromUnitVectors(this.object.up,new THREE.Vector3(0,1,0));
+    this._quatInverse.copy(this._quat).invert();
+    return super.update(deltaTime);
+  }
+  _rotateUp(angle){
+    // Keep OrbitControls' original drag mapping, carrying the camera's up
+    // direction through each pitch so rotating over either pole stays smooth.
+    const eye=this.object.position.clone().sub(this.target);
+    const right=new THREE.Vector3().crossVectors(this.object.up,eye).normalize();
+    const rotation=new THREE.Quaternion().setFromAxisAngle(right,-angle);
+    this.object.position.copy(this.target).add(eye.applyQuaternion(rotation));
+    this.object.up.applyQuaternion(rotation).normalize();
+  }
+}
+const orbit = new StudioOrbitControls(camera,renderer.domElement);
 orbit.enableDamping = false;
 orbit.enablePan = false;
 orbit.rotateSpeed = .7;
 orbit.zoomSpeed = .75;
-orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
 scene.add(new THREE.AmbientLight(0xffffff,.65));
