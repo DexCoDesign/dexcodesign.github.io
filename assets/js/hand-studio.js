@@ -33,7 +33,7 @@ const orbit = new TrackballControls(camera,renderer.domElement);
 orbit.staticMoving = true;
 orbit.noPan = true;
 orbit.keys = [];
-orbit.rotateSpeed = .7;
+orbit.rotateSpeed = 1.0;
 orbit.zoomSpeed = .75;
 orbit.addEventListener('change',()=>{dirty=true;});
 renderer.domElement.addEventListener('pointerdown',()=>orbit.handleResize(),true);
