@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="assets/css/styles.css?v=20261016-benchmark-small" />
   <link rel="stylesheet" href="assets/css/hand-studio.css?v=8" />
   <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
-    <script type="module" src="assets/js/hand-studio.js?v=48"></script>
+    <script type="module" src="assets/js/hand-studio.js?v=49"></script>
   <script>if(location.protocol==='file:')addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('studio-loading-text');if(el)el.innerHTML='For the latest interactive preview, <a href="http://127.0.0.1:8766/#hand-studio">open the local HTTP page</a> (or the <a href="https://dexcodesign.github.io/#hand-studio">published site</a>).';});</script>
 </head>
 <body>
@@ -46,9 +46,9 @@
         </div>
         <div class="studio-layout">
           <div class="studio-main">
-            <div id="studio-viewport" tabindex="0" aria-label="Interactive 3D hand. Drag to rotate freely around the palm base; right-drag to roll; scroll to zoom.">
+            <div id="studio-viewport" tabindex="0" aria-label="Interactive 3D hand. Drag to orbit around the palm base; scroll to zoom.">
               <img id="studio-poster" class="studio-poster" alt="" hidden />
-              <div class="studio-overlay"><span id="studio-name"></span><span>DRAG TO ROTATE · RIGHT-DRAG TO ROLL</span></div>
+              <div class="studio-overlay"><span id="studio-name"></span><span>DRAG TO ORBIT · SCROLL TO ZOOM</span></div>
               <div id="studio-loading" role="status"><div class="studio-progress"><span id="studio-loading-text">Loading studio · 0%</span><progress id="studio-progress" max="100" value="0"></progress></div></div>
             </div>
             <div class="studio-actions" id="studio-actions"></div>

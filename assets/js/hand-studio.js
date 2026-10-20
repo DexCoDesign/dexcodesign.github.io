@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { TrackballControls } from '../vendor/three/TrackballControls.js';
+import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
 const studioVersion = '47';
+const posterVersion = '49';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -29,31 +30,13 @@ viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
 camera.up.set(0,0,1);
-const orbit = new TrackballControls(camera,renderer.domElement);
-orbit.staticMoving = true;
-orbit.noPan = true;
-orbit.keys = [];
-orbit.rotateSpeed = 1.0;
+const orbit = new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping = false;
+orbit.enablePan = false;
+orbit.rotateSpeed = .7;
 orbit.zoomSpeed = .75;
+orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
-renderer.domElement.addEventListener('pointerdown',()=>orbit.handleResize(),true);
-let rollPointer=null,rollX=0;
-renderer.domElement.addEventListener('pointerdown',event=>{
-  if(event.button!==2)return;
-  event.preventDefault();event.stopImmediatePropagation();rollPointer=event.pointerId;rollX=event.clientX;
-  renderer.domElement.setPointerCapture(event.pointerId);
-},true);
-renderer.domElement.addEventListener('pointermove',event=>{
-  if(event.pointerId!==rollPointer)return;
-  event.preventDefault();event.stopImmediatePropagation();
-  const angle=-(event.clientX-rollX)/renderer.domElement.clientWidth*Math.PI*2;rollX=event.clientX;
-  camera.up.applyAxisAngle(camera.position.clone().sub(orbit.target).normalize(),angle);camera.lookAt(orbit.target);dirty=true;
-},true);
-for(const type of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(type,event=>{
-  if(event.pointerId!==rollPointer)return;
-  event.stopImmediatePropagation();rollPointer=null;
-  if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
-},true);
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
 scene.add(new THREE.AmbientLight(0xffffff,.65));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
@@ -128,7 +111,7 @@ function displayMaterial(material){
   });
 }
 const axisQ = new THREE.Quaternion();
-new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);resizeView();orbit.handleResize();dirty=true;}).observe(viewport);
+new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);resizeView();dirty=true;}).observe(viewport);
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;dirty=true;}).observe(viewport);
 
 function loading(percent,text='Loading model'){
@@ -278,7 +261,7 @@ async function choose(id){
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
-    $('poster').src=`assets/images/studio/posters/${id}.jpg?v=${studioVersion}`;$('poster').hidden=false;
+    $('poster').src=`assets/images/studio/posters/${id}.jpg?v=${posterVersion}`;$('poster').hidden=false;
     $('poster').onerror=()=>{if(token===generation)$('poster').hidden=true;};
     const next=await getMetadata(record);
     if(token!==generation)return;
@@ -296,7 +279,7 @@ async function choose(id){
     const box=new THREE.Box3().setFromObject(root),center=rotationCenter(model),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),direction=new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize();camera.up.set(0,0,1);
     camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
-    orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.handleResize();frameView(box,center,direction,radius);
+    orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);
     selectedPose='neutral';buttons();$('status').textContent=model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
@@ -304,7 +287,6 @@ async function choose(id){
 function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=category;$('model').onchange=()=>choose($('model').value);
 function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
-  orbit.update();
   if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2;for(const c of model.controls)current[c.name]=slowStart[c.name]*(1-x)+slowEnd[c.name]*x;moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*.15;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
