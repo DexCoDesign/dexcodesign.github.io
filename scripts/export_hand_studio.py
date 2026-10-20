@@ -227,7 +227,7 @@ def export_one(path, mid, name, category, spec=None, provenance=None, mirror=Fal
                  bounds=scene.bounds.tolist(), materials=color_audit,
                  view_direction=[.42,1,.28] if category=='ai' else
                                 [1,.35,.28] if mid in {'sharpa_wave_01','tesollo_dg5f'} else
-                                [.42,1,.28] if mid=='supr_female_foot' else [-.42,-1,.28],
+                                [-.42,-1,.28],
                  pinch_note=(spec.get('pinch_note') if spec else
                              'Thumb/index tip-alignment preview; force closure and contact are not validated.'
                              if category == 'robot' and 'pinch' in poses else None),
@@ -279,7 +279,7 @@ def main():
                 continue
             path = args.skynet_root / entry['path']
             category = 'others' if 'foot' in mid else 'hand' if mid == 'mano' else 'robot'
-            records.append(export_one(path, mid, 'Foot' if mid=='supr_female_foot' else record['display_name'], category, recovered=recovered,
+            records.append(export_one(path, mid, 'SUPR Foot' if mid=='supr_female_foot' else record['display_name'], category, recovered=recovered,
                 provenance={'host':'Skynet','commit':args.snapshot_commit,'path':'assets/robot_hands/' + entry['path'],'upstream':record.get('source')}))
         license_dir=OUT/'licenses';license_dir.mkdir(exist_ok=True)
         for path in args.skynet_root.glob('*/LICENSE*'):

@@ -5,7 +5,7 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '45';
+const studioVersion = '46';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -44,7 +44,12 @@ const palmView = {
   wuji_hand_2:[-.42,-1,.28], sharpa_wave_01:[1,.35,.28], tesollo_dg5f:[1,.35,.28],
   unitree_dex5_1:[-.42,-1,.28], shadow_hand_e:[-.42,-1,.28], midas_hand:[-.42,-1,.28],
   ruka_v2:[-.42,-1,.28], inspire_rh56dfx:[-.42,-1,.28], robotera_xhand1_pro:[-.42,-1,.28],
+  supr_female_foot:[-.42,-1,.28],
 };
+// Display-only: raise the toes (+X -> +Z) and face the sole (-Z -> -Y),
+// matching the palm-facing initial view without changing the source asset.
+const footDisplayRotation = new THREE.Quaternion().setFromAxisAngle(
+  new THREE.Vector3(1,1,1).normalize(), -2*Math.PI/3);
 const loader = new GLTFLoader();
 // All models share the same lamps. Material-specific reflection distinguishes
 // metallic housings from plastic; there are no model-specific lighting hacks.
@@ -223,12 +228,13 @@ async function choose(id){
     const template=await getScene(next,token);
     if(token!==generation)return;
     if(root)scene.remove(root);root=template.clone(true);
+    if(next.id==='supr_female_foot')root.quaternion.premultiply(footDisplayRotation);
     // Legacy AI exports were reflected although those sources were already
     // right-sided; TALON-9 is the opposite and needs its export reflection.
     if(next.category==='ai'&&next.display_reflection&&next.id!=='talon9')root.scale.x=-1;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
-    $('name').textContent=model.name;$('counts').textContent=countText(model);
+    $('name').textContent=record.name;$('counts').textContent=countText(model);
     buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
