@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { OrbitControls } from '../vendor/three/OrbitControls.js';
+import { TrackballControls } from '../vendor/three/TrackballControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '46';
+const studioVersion = '47';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -16,6 +16,7 @@ let model, root, joints = new Map(), sliders = new Map(), current = {}, target =
 const metadataCache = new Map(), sceneCache = new Map();
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 let slowStart = {}, slowEnd = {};
+const viewShift = new THREE.Vector2();
 const viewport = $('viewport');
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -28,13 +29,31 @@ viewport.append(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.001,10);
 camera.up.set(0,0,1);
-const orbit = new OrbitControls(camera,renderer.domElement);
-orbit.enableDamping = false;
-orbit.enablePan = false;
+const orbit = new TrackballControls(camera,renderer.domElement);
+orbit.staticMoving = true;
+orbit.noPan = true;
+orbit.keys = [];
 orbit.rotateSpeed = .7;
 orbit.zoomSpeed = .75;
-orbit.minPolarAngle = .08; orbit.maxPolarAngle = Math.PI-.08;
 orbit.addEventListener('change',()=>{dirty=true;});
+renderer.domElement.addEventListener('pointerdown',()=>orbit.handleResize(),true);
+let rollPointer=null,rollX=0;
+renderer.domElement.addEventListener('pointerdown',event=>{
+  if(event.button!==2)return;
+  event.preventDefault();event.stopImmediatePropagation();rollPointer=event.pointerId;rollX=event.clientX;
+  renderer.domElement.setPointerCapture(event.pointerId);
+},true);
+renderer.domElement.addEventListener('pointermove',event=>{
+  if(event.pointerId!==rollPointer)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  const angle=-(event.clientX-rollX)/renderer.domElement.clientWidth*Math.PI*2;rollX=event.clientX;
+  camera.up.applyAxisAngle(camera.position.clone().sub(orbit.target).normalize(),angle);camera.lookAt(orbit.target);dirty=true;
+},true);
+for(const type of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(type,event=>{
+  if(event.pointerId!==rollPointer)return;
+  event.stopImmediatePropagation();rollPointer=null;
+  if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
+},true);
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
 scene.add(new THREE.AmbientLight(0xffffff,.65));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
@@ -46,6 +65,44 @@ const palmView = {
   ruka_v2:[-.42,-1,.28], inspire_rh56dfx:[-.42,-1,.28], robotera_xhand1_pro:[-.42,-1,.28],
   supr_female_foot:[-.42,-1,.28],
 };
+const palmLink = {
+  talon9:'palm', mano:'right_palm', wuji_hand_2:'r_wrist',
+  sharpa_wave_01:'right_hand_C_MC', tesollo_dg5f:'rl_dg_palm',
+  unitree_dex5_1:'base_link00', shadow_hand_e:'rh_palm', midas_hand:'palm_base',
+  ruka_v2:'base_new', inspire_rh56dfx:'base', robotera_xhand1_pro:'right_hand_link',
+  supr_female_foot:'foot_base',
+};
+function rotationCenter(next){
+  const base=root.getObjectByName('link__'+(palmLink[next.id]||'central_palm'));
+  if(!base)throw new Error('Model palm base is missing');
+  // Use only the base's own visual meshes: the articulated thumb and fingers
+  // must not shift the rotation center away from the palm.
+  const bounds=new THREE.Box3();
+  for(const child of base.children)if(child.name.startsWith('visual__'))bounds.expandByObject(child);
+  return bounds.isEmpty()?base.getWorldPosition(new THREE.Vector3()):bounds.getCenter(new THREE.Vector3());
+}
+function frameView(bounds,center,direction,radius){
+  camera.clearViewOffset();
+  let distance=radius*2.15;
+  const projected=new THREE.Box2();
+  for(let attempt=0;attempt<4;attempt++){
+    camera.position.copy(center).addScaledVector(direction,distance);orbit.update();camera.updateMatrixWorld(true);projected.makeEmpty();
+    for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+      const point=new THREE.Vector3(x,y,z).project(camera);projected.expandByPoint(new THREE.Vector2(point.x,point.y));
+    }
+    const span=projected.getSize(new THREE.Vector2()),scale=Math.max(span.x,span.y)/1.8;
+    if(scale<=1||attempt===3)break;
+    distance*=scale*1.05;
+  }
+  // Lens shift centers the initial model while the physical palm base remains
+  // the fixed rotation pivot, independent of finger reach and thumb position.
+  projected.getCenter(viewShift);viewShift.multiply(new THREE.Vector2(.5,-.5));
+  resizeView();
+}
+function resizeView(){
+  const {width,height}=viewport.getBoundingClientRect();
+  camera.aspect=width/height;camera.setViewOffset(width,height,viewShift.x*width,viewShift.y*height,width,height);camera.updateProjectionMatrix();
+}
 // Display-only: raise the toes (+X -> +Z) and face the sole (-Z -> -Y),
 // matching the palm-facing initial view without changing the source asset.
 const footDisplayRotation = new THREE.Quaternion().setFromAxisAngle(
@@ -71,7 +128,7 @@ function displayMaterial(material){
   });
 }
 const axisQ = new THREE.Quaternion();
-new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();dirty=true;}).observe(viewport);
+new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);resizeView();orbit.handleResize();dirty=true;}).observe(viewport);
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;dirty=true;}).observe(viewport);
 
 function loading(percent,text='Loading model'){
@@ -236,9 +293,10 @@ async function choose(id){
     for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
     $('name').textContent=record.name;$('counts').textContent=countText(model);
     buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
-    const radius=Math.max(size.x,size.y,size.z),distance=radius*2.15;camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
-    orbit.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize().multiplyScalar(distance));orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.update();
+    const box=new THREE.Box3().setFromObject(root),center=rotationCenter(model),size=box.getSize(new THREE.Vector3());
+    const radius=Math.max(size.x,size.y,size.z),direction=new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize();camera.up.set(0,0,1);
+    camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
+    orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;orbit.handleResize();frameView(box,center,direction,radius);
     selectedPose='neutral';buttons();$('status').textContent=model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
@@ -246,6 +304,7 @@ async function choose(id){
 function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=category;$('model').onchange=()=>choose($('model').value);
 function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
+  orbit.update();
   if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2;for(const c of model.controls)current[c.name]=slowStart[c.name]*(1-x)+slowEnd[c.name]*x;moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*.15;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
