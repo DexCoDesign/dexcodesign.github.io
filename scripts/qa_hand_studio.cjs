@@ -24,6 +24,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   for(const name of expected){
    await page.getByRole('button',{name,exact:true}).click();
    if(!await page.getByRole('button',{name,exact:true}).evaluate(el=>el.classList.contains('on')))throw new Error('Pose did not activate '+record.id+' '+name);
+   if((process.env.QA_CAPTURE_POSES||'').split(',').includes(name.toLowerCase())){
+    await page.waitForTimeout(650);
+    await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'-'+name.toLowerCase()+'.png')});
+   }
   }
   await page.waitForTimeout(650);
   await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'-pose.png')});

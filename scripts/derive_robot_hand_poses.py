@@ -54,7 +54,9 @@ def finger(model_id, name):
 def lateral(model_id, name):
     n = name.lower()
     if model_id == "unitree_dex5_1": return bool(re.search(r"(?:yaw_11r|roll_[2-5]1r)$", n))
-    if model_id == "tesollo_dg5f": return bool(re.search(r"dg_[1-5]_1$", n))
+    # Tesollo's fifth digit starts with a palm-fold joint. Its lateral
+    # finger hinge is joint 2, unlike the other four digits.
+    if model_id == "tesollo_dg5f": return bool(re.search(r"dg_[1-4]_1$|dg_5_2$", n))
     if model_id == "shadow_hand_e": return bool(re.search(r"(?:ff|mf|rf|lf)j4$|thj[35]$", n))
     if model_id == "robotera_xhand1_pro": return "_mcp0_joint" in n
     if model_id == "ruka_v2": return "splay" in n or n == "thumb_cmc"
@@ -143,9 +145,12 @@ class KinematicModel:
         return (matrix @ np.r_[point, 1])[:3]
 
 
-def derive(model):
+def derive_spread(model):
     q0 = model.neutral
     spread = dict(q0)
+    digits = [d for d in ("index", "middle", "ring", "little") if d in model.tips]
+    lateral_axis = model.tip(digits[0], q0) - model.tip(digits[-1], q0)
+    lateral_axis /= np.linalg.norm(lateral_axis)
     order = [d for d in ("index", "ring", "little", "thumb") if d in model.tips]
     for digit in order:
         reference = "index" if digit == "thumb" else "middle" if digit != "little" else "ring"
@@ -154,9 +159,18 @@ def derive(model):
             if finger(model.id, c["name"]) != digit or not lateral(model.id, c["name"]): continue
             name = c["name"]
             candidates = [q0[name], q0[name]+.72*(c["lower"]-q0[name]), q0[name]+.72*(c["upper"]-q0[name])]
+            if model.id == "tesollo_dg5f" and name == "rj_dg_5_2":
+                # Its unusually large upper limit also serves opposition;
+                # a moderate fan, not the end-stop, is the Spread preview.
+                candidates = [q0[name], max(c["lower"], q0[name]-.5), min(c["upper"], q0[name]+.5)]
             def separation(value):
                 pose = {**spread, name: value}
-                return np.linalg.norm(model.tip(digit, pose)-model.tip(reference, pose))
+                if digit == "thumb":
+                    return np.linalg.norm(model.tip(digit, pose)-model.tip(reference, pose))
+                # Unsigned tip distance can increase after a finger crosses
+                # its neighbor. Choose the signed outward motion instead.
+                sign = 1.0 if digit == "index" else -1.0
+                return sign * np.dot(model.tip(digit, pose)-model.tip(digit, q0), lateral_axis)
             spread[name] = max(candidates, key=separation)
 
     if model.id == "wuji_hand_2":
@@ -173,6 +187,16 @@ def derive(model):
         tips = [model.tip(digit, spread)[0] for digit in digits]
         baseline = [model.tip(digit, q0)[0] for digit in digits]
         assert all(a-b > a0-b0 for a,b,a0,b0 in zip(tips,tips[1:],baseline,baseline[1:])), (tips, baseline)
+
+    tips = np.array([model.tip(digit, spread) for digit in digits])
+    signed_gaps = np.diff(-tips @ lateral_axis)
+    assert np.all(signed_gaps > 0), (model.id, "Spread crossed neighboring fingers", signed_gaps)
+    return spread
+
+
+def derive(model):
+    q0 = model.neutral
+    spread = derive_spread(model)
 
     selected = [c for c in model.controls if finger(model.id, c["name"]) in {"thumb", "index"}
                 and "linkage" not in c["name"].lower()
@@ -206,21 +230,28 @@ def derive(model):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-id", choices=TIPS)
+    parser.add_argument("--spread-only", action="store_true", help="Update Spread without changing other presets")
     args = parser.parse_args()
     profile_path = MODELS / "robot_pose_profiles.json"
     audit_path = MODELS / "robot_pose_audit.json"
-    profiles = json.loads(profile_path.read_text()) if args.model_id and profile_path.exists() else {}
-    audit = json.loads(audit_path.read_text()) if args.model_id and audit_path.exists() else {}
+    profiles = json.loads(profile_path.read_text()) if (args.model_id or args.spread_only) and profile_path.exists() else {}
+    audit = json.loads(audit_path.read_text()) if (args.model_id or args.spread_only) and audit_path.exists() else {}
     for model_id in ([args.model_id] if args.model_id else TIPS):
         model = KinematicModel(model_id)
-        poses, checks = derive(model)
-        profiles[model_id] = poses
-        audit[model_id] = checks
+        if args.spread_only:
+            poses = {"spread": derive_spread(model)}
+            checks = {"spread_lateral_joints": [c["name"] for c in model.controls
+                       if poses["spread"][c["name"]] != model.neutral[c["name"]]]}
+        else:
+            poses, checks = derive(model)
+        profiles[model_id] = {**profiles.get(model_id, {}), **poses}
+        audit[model_id] = {**audit.get(model_id, {}), **checks}
         print(model_id, checks, flush=True)
         model.data["poses"].update(poses)
-        if model_id == "midas_hand":
+        if model_id == "midas_hand" and not args.spread_only:
             model.data["poses"]["flex"] = model.close_preview_loops(model.data["poses"]["flex"])
-        model.data["pinch_note"] = "Thumb/index tip-alignment preview; force closure and contact are not validated."
+        if not args.spread_only:
+            model.data["pinch_note"] = "Thumb/index tip-alignment preview; force closure and contact are not validated."
         (MODELS / f"{model_id}.json").write_text(json.dumps(model.data, separators=(",", ":")) + "\n")
     profile_path.write_text(json.dumps(profiles, indent=2) + "\n")
     audit_path.write_text(json.dumps(audit, indent=2) + "\n")

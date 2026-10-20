@@ -88,7 +88,7 @@
       "right_ring_DIP": 0.0,
       "right_pinky_CMC": 0.0,
       "right_pinky_MCP_FE": 0.0,
-      "right_pinky_MCP_AA": -0.251352,
+      "right_pinky_MCP_AA": 0.251352,
       "right_pinky_PIP": 0.0,
       "right_pinky_DIP": 0.0
     },
@@ -159,8 +159,8 @@
       "rj_dg_4_2": 0.0,
       "rj_dg_4_3": 0.0,
       "rj_dg_4_4": 0.0,
-      "rj_dg_5_1": 0.753982236864,
-      "rj_dg_5_2": 0.0,
+      "rj_dg_5_1": 0.0,
+      "rj_dg_5_2": 0.5,
       "rj_dg_5_3": 0.0,
       "rj_dg_5_4": 0.0
     },
@@ -227,7 +227,7 @@
       "Pitch_42R": 0.0,
       "Pitch_43R": 0.0,
       "Pitch_44R": 0.0,
-      "Roll_51R": -0.2764584,
+      "Roll_51R": 0.2764584,
       "Pitch_52R": 0.0,
       "Pitch_53R": 0.0,
       "Pitch_54R": 0.0
@@ -291,7 +291,7 @@
       "rh_RFJ3": 0.0,
       "rh_RFJ2": 0.0,
       "rh_LFJ5": 0.0,
-      "rh_LFJ4": 0.25132751999999997,
+      "rh_LFJ4": -0.25132751999999997,
       "rh_LFJ3": 0.0,
       "rh_LFJ2": 0.0,
       "rh_THJ5": 0.0,
