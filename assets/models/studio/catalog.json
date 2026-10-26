@@ -262,6 +262,58 @@
       "metadata": "assets/models/studio/robotera_xhand1_pro.json"
     },
     {
+      "id": "dexmate_vega",
+      "name": "Dexmate Vega",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 26,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 9370100,
+      "metadata": "assets/models/studio/dexmate_vega.json"
+    },
+    {
+      "id": "rby1",
+      "name": "Rainbow RB-Y1",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 26,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 9181704,
+      "metadata": "assets/models/studio/rby1.json"
+    },
+    {
+      "id": "galaxea_r1",
+      "name": "Galaxea R1",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 22,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 6091380,
+      "metadata": "assets/models/studio/galaxea_r1.json"
+    },
+    {
+      "id": "dyna_taku",
+      "name": "DYNA Taku",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 33,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 9676876,
+      "metadata": "assets/models/studio/dyna_taku.json"
+    },
+    {
       "id": "supr_female_foot",
       "name": "SUPR Foot",
       "category": "others",

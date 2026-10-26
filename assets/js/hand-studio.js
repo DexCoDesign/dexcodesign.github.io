@@ -5,8 +5,8 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '57';
-const posterVersion = '56';
+const studioVersion = '58';
+const posterVersion = '58';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -71,6 +71,7 @@ const palmLink = {
   supr_female_foot:'foot_base',
 };
 function rotationCenter(next){
+  if(next.category==='manipulator')return new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
   const base=root.getObjectByName('link__'+(palmLink[next.id]||'central_palm'));
   if(!base)throw new Error('Model palm base is missing');
   // Use only the base's own visual meshes: the articulated thumb and fingers
@@ -173,7 +174,7 @@ function movement(control,fraction,sign=1){
   return clamp(extreme*fraction,control.lower,control.upper);
 }
 function addBasicPoses(next){
-  if(next.category==='others')return;
+  if(next.category==='others'||next.category==='manipulator')return;
   const neutral=Object.fromEntries(next.controls.map(c=>[c.name,clamp(next.poses.neutral?.[c.name]??0,c.lower,c.upper)]));
   if(next.category==='robot'){
     // Robot axes and flexion signs vary. Only use presets derived from this
@@ -196,7 +197,7 @@ function addBasicPoses(next){
   }
   for(const [name,pose] of Object.entries({neutral,spread,wrap,pinch}))next.poses[name]??=pose;
 }
-function pose(name){slow=false;selectedPose=name;target=values(model.poses[name]);buttons();$('status').textContent=name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;}
+function pose(name){slow=false;selectedPose=name;target=values(model.poses[name]);buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;}
 function buttons(){for(const b of $('actions').querySelectorAll('button'))b.classList.toggle('on',Boolean(b.dataset.pose===selectedPose&&!slow||b.dataset.slow&&slow));}
 function loopDependent(name){return Boolean(model?.closed_loop_preview&&/(?:index|middle|ring)_dip(?:_linkage)?_joint$/.test(name));}
 function closeMidasLoops(q){
@@ -237,20 +238,21 @@ function buildControls(){
     row.append(label,input);groups.get(c.group).append(row);sliders.set(c.name,{input,output});
   }
   $('actions').replaceChildren();
-  for(const name of (model.category==='others'?['neutral','flex']:basicPoses)){const b=document.createElement('button');b.textContent=name[0].toUpperCase()+name.slice(1);b.dataset.pose=name;b.onclick=()=>pose(name);$('actions').append(b);}
+  for(const name of (model.pose_order||(model.category==='others'?['neutral','flex']:basicPoses))){const b=document.createElement('button');b.textContent=model.category==='manipulator'&&name==='neutral'?'Home':name[0].toUpperCase()+name.slice(1);b.dataset.pose=name;b.onclick=()=>pose(name);$('actions').append(b);}
   const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{
     if(!slow){
       slowStart={...current};slowEnd={};
-      const preferred=values(model.poses[selectedPose==='neutral'?(model.category==='others'?'flex':'wrap'):selectedPose]||model.poses.neutral);
+      const preferred=values(model.poses[selectedPose==='neutral'?(model.category==='manipulator'?'reach':model.category==='others'?'flex':'wrap'):selectedPose]||model.poses.neutral);
       for(const c of model.controls){
         const start=slowStart[c.name],span=c.upper-c.lower;
+        if(model.category==='manipulator'){slowEnd[c.name]=preferred[c.name];continue;}
         if(loopDependent(c.name)){slowEnd[c.name]=start;continue;}
         if(span<=1e-8){slowEnd[c.name]=start;continue;}
         if(Math.abs(preferred[c.name]-start)>=.12*span){slowEnd[c.name]=preferred[c.name];continue;}
         const bound=c.upper-start>=start-c.lower?c.upper:c.lower;
         slowEnd[c.name]=clamp(start+.65*(bound-start),c.lower,c.upper);
       }
-      $('status').textContent='Slow preview sweeps every active DoF; passive joints follow the visual response shown in the model.';
+      $('status').textContent=model.category==='manipulator'?model.preview_note:'Slow preview sweeps every active DoF; passive joints follow the visual response shown in the model.';
     }else target={...current};
     slow=!slow;clockStart=performance.now();buttons();dirty=true;
   };$('actions').append(b);
@@ -267,6 +269,7 @@ function showReviewLegend(){
   }
 }
 function countText(next){
+  if(next.category==='manipulator')return `${next.counts.active} joint controls · whole robot`;
   return next.closed_loop_preview?
     `${next.counts.active} URDF joints · 6 source-loop joints follow PIP in this preview`:
     `${next.counts.active} active · ${next.counts.coupled} coupled · ${next.counts.passive} passive`;
@@ -295,16 +298,16 @@ async function choose(id){
     const radius=Math.max(size.x,size.y,size.z),direction=new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize();camera.up.set(0,0,1);
     camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);
-    selectedPose='neutral';buttons();$('status').textContent=model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
+    selectedPose='neutral';buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
-function category(){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length)choose(records[0].id);else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
-$('category').onchange=category;$('model').onchange=()=>choose($('model').value);
+function category(preferredId){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length){const record=records.find(r=>r.id===preferredId)||records[0];$('model').value=record.id;choose(record.id);}else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
+$('category').onchange=()=>category();$('model').onchange=()=>choose($('model').value);
 function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
   if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2;for(const c of model.controls)current[c.name]=slowStart[c.name]*(1-x)+slowEnd[c.name]*x;moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*.15;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
 requestAnimationFrame(tick);
-fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;category();}).catch(e=>{$('loading-text').textContent=e.message;});
+fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;const params=new URLSearchParams(location.search),requested=catalog.find(r=>r.id===params.get('model')),collection=requested?.category||params.get('collection');if([...$('category').options].some(o=>o.value===collection))$('category').value=collection;category(requested?.id);}).catch(e=>{$('loading-text').textContent=e.message;});

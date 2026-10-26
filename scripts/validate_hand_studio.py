@@ -11,6 +11,7 @@ ap.add_argument('--hand', help='Validate one model without loading unrelated sou
 args=ap.parse_args()
 rng=np.random.default_rng(42);results=[]
 for record in json.loads((OUT/'catalog.json').read_text())['records']:
+    if record['category']=='manipulator':continue
     if args.hand and record['id']!=args.hand:continue
     m=json.loads((OUT/f'{record["id"]}.json').read_text());ai=record['category']=='ai'
     path=(OUT/'sources/talon9/hand.urdf' if record['id']=='talon9' else
