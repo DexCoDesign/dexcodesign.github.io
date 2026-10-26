@@ -5,8 +5,8 @@ import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '58';
-const posterVersion = '58';
+const studioVersion = '59';
+const posterVersion = '59';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -291,7 +291,7 @@ async function choose(id){
     // right-sided; TALON-9 is the opposite and needs its export reflection.
     if(next.category==='ai'&&next.display_reflection&&next.id!=='talon9')root.scale.x=-1;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
-    for(const j of model.joints){const n=root.getObjectByName(j.node);if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
+    for(const j of model.joints){const n=root.getObjectByName(j.node)||root.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(j.node));if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
     $('name').textContent=record.name;$('counts').textContent=countText(model);
     buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=rotationCenter(model),size=box.getSize(new THREE.Vector3());

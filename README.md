@@ -48,9 +48,9 @@ Three.js 0.180.0 is vendored under `assets/vendor/three` (MIT); only one model i
 loaded at a time. No Python, GPU server, WebSocket, or CDN is required in production.
 GitHub Pages serves the meshes, joint metadata, and scripts as ordinary files.
 
-The catalog has 21 hand/foot models plus four whole-body mobile manipulators:
+The catalog has 21 hand/foot models plus five whole-body mobile manipulators:
 MANO under **Hand**, nine real embodiments under **Robot hand**, ten generated
-concepts under **AI gen**, Dexmate Vega, Rainbow RB-Y1, Galaxea R1 and DYNA Taku
+concepts under **AI gen**, Dexmate Vega, Rainbow RB-Y1, Galaxea R1, Gento Luna and DYNA Taku
 under **Manipulator**, and the SUPR foot under **Others**.
 The active/coupled counts describe the project's direct-motor
 simulation assets, not necessarily the manufacturer's original transmission.
@@ -112,15 +112,17 @@ Original license notices accompany the display assets under
 `Manipulator` is between `AI gen` and `Others` and uses the same 3D viewer and
 joint sliders. Home, Reach and Fold are visual joint configurations; Slow
 motion interpolates those configurations. Sliders are grouped by mobile base,
-torso, head, left arm, right arm and grippers. The whole-body bounds determine
+torso, head, left arm, right arm. The whole-body bounds determine
 the orbit pivot and camera fit. Open `?collection=manipulator#hand-studio`, or
 add `&model=dyna_taku`, to link directly to the collection/model.
 
 Only the new mobile-manipulator assets are exported from the local
 DexCoDesign mobile library. Existing Skynet-derived hand assets are preserved.
-The three vendor-derived models use their existing end-effector-free URDFs;
-Taku retains its original grippers and is reconstructed from DYNA public web
-assets. Taku's display limits are explicitly marked as placeholders. These
+All five use colored bare-wrist `body/robot.urdf` descriptions. Source visual
+materials are retained for Dexmate, RB-Y1, Galaxea and Taku. Luna uses warm gray
+and a black visor approximating official product photos; its vendor RGB are
+placeholders. Original hands, grippers and Taku baked gripper housings/wrist
+cameras are removed. Taku is reconstructed from DYNA public web assets. Taku's display limits are explicitly marked as placeholders. These
 previews do not validate dynamics, collision avoidance or manipulation tasks.
 
 ```sh
@@ -134,6 +136,6 @@ The manipulator validator compares every link/frame against an independent
 URDF parser at the three displayed poses and two sampled configurations.
 `validate_hand_studio.py` continues to validate only the hand/foot collections.
 Run `refresh_hand_studio_posters.cjs` with
-`POSTER_MODELS=dexmate_vega,rby1,galaxea_r1,dyna_taku` after export to capture the
-four corresponding loading posters. No simulation server is needed to host
+`POSTER_MODELS=dexmate_vega,rby1,galaxea_r1,gento_luna,dyna_taku` after export to capture the
+five corresponding loading posters. No simulation server is needed to host
 the collection.

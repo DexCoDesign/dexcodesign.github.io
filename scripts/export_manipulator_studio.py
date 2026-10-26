@@ -10,17 +10,19 @@ from export_hand_studio import OUT, export_one
 
 
 MODELS = {
-    'dexmate_vega': ('Dexmate Vega', 'dexmate_vega/eef_free/robot.urdf',
+    'dexmate_vega': ('Dexmate Vega', 'dexmate_vega/body/robot.urdf',
         {'torso_j1': 1.3666, 'torso_j2': 2.7021, 'torso_j3': 1.2036,
          'L_arm_j1': 1.5707963267948966, 'R_arm_j1': -1.5707963267948966}),
-    'rby1': ('Rainbow RB-Y1', 'rby1/eef_free/robot.urdf', {}),
-    'galaxea_r1': ('Galaxea R1', 'galaxea_r1/eef_free/robot.urdf',
+    'rby1': ('Rainbow RB-Y1', 'rby1/body/robot.urdf', {}),
+    'galaxea_r1': ('Galaxea R1', 'galaxea_r1/body/robot.urdf',
         {'left_arm_joint1': -1.5707963267948966, 'left_arm_joint3': -3.141592653589793,
          'right_arm_joint1': 1.5707963267948966, 'right_arm_joint3': -3.141592653589793}),
-    'dyna_taku': ('DYNA Taku', 'dyna_taku/full/robot.urdf',
-        {'right_shoulder_pitch_joint': -0.55, 'right_shoulder_roll_joint': -0.15,
-         'right_elbow_joint': -1.35, 'left_shoulder_pitch_joint': -0.25,
-         'left_elbow_joint': -0.9, 'folding_low_joint': 0.24}),
+    'gento_luna': ('Gento Luna', 'gento_luna/body/robot.urdf',
+        {'Arm_L1_Joint': -1.5707963267948966, 'Arm_L2_Joint': 1.5707963267948966,
+         'Arm_L3_Joint': 1.5707963267948966, 'Arm_R1_Joint': -1.5707963267948966,
+         'Arm_R2_Joint': -1.5707963267948966, 'Arm_R3_Joint': 1.5707963267948966}),
+    'dyna_taku': ('DYNA Taku', 'dyna_taku/body/robot.urdf',
+        {'folding_low_joint': -0.815, 'folding_high_joint': 1.915, 'waist_pitch_joint': -1.1}),
 }
 
 
@@ -30,13 +32,13 @@ def group(name):
         return 'Mobile base'
     if any(word in low for word in ['head', 'neck']):
         return 'Head'
-    if any(word in low for word in ['torso', 'waist', 'folding']):
+    if any(word in low for word in ['torso', 'waist', 'folding', 'gento luna_leg']):
         return 'Torso'
     if 'gripper' in low:
         return 'Grippers'
-    if low.startswith(('l_arm', 'left_')):
+    if low.startswith(('l_arm', 'left_', 'arm_l')):
         return 'Left arm'
-    if low.startswith(('r_arm', 'right_')):
+    if low.startswith(('r_arm', 'right_', 'arm_r')):
         return 'Right arm'
     return 'Joints'
 
@@ -64,6 +66,8 @@ def main():
         root_link = next(link.get('name') for link in source.findall('link') if link.get('name') not in children)
         for control in model['controls']:
             control['group'] = group(control['name'])
+            if mid == 'dexmate_vega' and control['group'] in ('Left arm', 'Right arm'):
+                control['group'] = 'Right arm' if control['group'] == 'Left arm' else 'Left arm'
         home = {c['name']: max(c['lower'], min(c['upper'], home_values.get(c['name'], 0)))
                 for c in model['controls']}
         reach, fold = dict(home), dict(home)
@@ -75,10 +79,11 @@ def main():
                 step = min(0.35, 0.12 * (control['upper'] - control['lower']))
                 destination = max(control['lower'], min(control['upper'], source + direction * step))
                 (fold if part == 'Torso' else reach)[control['name']] = destination
-        model.update(side='whole robot', root_link=root_link,
+        manifest = json.loads((urdf.parent / 'manifest.json').read_text())
+        model.update(end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
                      poses={'neutral': home, 'reach': reach, 'fold': fold},
                      pose_order=['neutral', 'reach', 'fold'],
-                     view_direction=[1.4, -2.2, 0.8], limits_are_placeholders=mid == 'dyna_taku',
+                     view_direction=([-3, 1.4, 0.65] if mid == 'dexmate_vega' else [3, -1.4, 0.65]), limits_are_placeholders=mid == 'dyna_taku',
                      preview_note=('Whole-body joint preview. Taku ranges are display placeholders.' if mid == 'dyna_taku'
                                    else 'Whole-body joint preview. Use the sliders to explore the base, torso and arms.'))
         meta_path.write_text(json.dumps(model, separators=(',', ':')) + '\n')

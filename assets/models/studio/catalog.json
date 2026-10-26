@@ -271,7 +271,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 9370100,
+      "bytes": 10031864,
       "metadata": "assets/models/studio/dexmate_vega.json"
     },
     {
@@ -284,7 +284,7 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 9181704,
+      "bytes": 9627284,
       "metadata": "assets/models/studio/rby1.json"
     },
     {
@@ -297,8 +297,21 @@
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 6091380,
+      "bytes": 6100680,
       "metadata": "assets/models/studio/galaxea_r1.json"
+    },
+    {
+      "id": "gento_luna",
+      "name": "Gento Luna",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 22,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 15024752,
+      "metadata": "assets/models/studio/gento_luna.json"
     },
     {
       "id": "dyna_taku",
@@ -306,11 +319,11 @@
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
-        "active": 33,
+        "active": 29,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 9676876,
+      "bytes": 7462824,
       "metadata": "assets/models/studio/dyna_taku.json"
     },
     {
