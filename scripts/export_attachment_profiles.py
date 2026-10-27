@@ -113,7 +113,7 @@ def main():
         assert offset < .20, (mid, offset)
         translation = np.array([0., 0., offset])
         mount_center = None
-        if mid in {'ruka_v2', 'shadow_hand_e'}:
+        if mid in {'ruka_v2', 'shadow_hand_e', 'unitree_dex5_1'}:
             mount_center = base_plane_center(scene, root, inverse, correction, matrix)
             translation = -mount_center
         profiles[mid] = dict(root_node=root, quaternion=Rotation.from_matrix(matrix).as_quat().tolist(),

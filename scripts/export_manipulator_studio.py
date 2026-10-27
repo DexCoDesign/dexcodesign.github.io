@@ -108,12 +108,15 @@ def main():
         source = ET.parse(urdf).getroot()
         children = {j.find('child').get('link') for j in source.findall('joint')}
         root_link = next(link.get('name') for link in source.findall('link') if link.get('name') not in children)
+        shoulder_joint = {'dexmate_vega': 'L_arm_j1', 'rby1': 'left_arm_0',
+                          'gento_luna': 'Arm_L1_Joint', 'dyna_taku': 'left_shoulder_pitch_joint'}[mid]
+        upright_link = source.find(f"joint[@name='{shoulder_joint}']/parent").get('link')
         for control in model['controls']:
             control['group'] = group(control['name'])
         poses = {name: {c['name']: max(c['lower'], min(c['upper'], values.get(c['name'], 0)))
                        for c in model['controls']} for name, values in preview_poses[mid].items()}
         manifest = json.loads((urdf.parent / 'manifest.json').read_text())
-        model.update(hand_mounts={side: 'link__' + side + '_eef_mount' for side in ('left', 'right')}, end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
+        model.update(upright_node='link__' + upright_link, hand_mounts={side: 'link__' + side + '_eef_mount' for side in ('left', 'right')}, end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
                      poses=poses, motion_pairs=mirrored_joint_pairs(source, model['controls'], poses['spread']),
                      pose_order=['neutral', 'spread', 'fold'],
                      view_direction=[3, -2, 0.8], limits_are_placeholders=mid == 'dyna_taku',

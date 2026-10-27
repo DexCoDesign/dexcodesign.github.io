@@ -110,12 +110,14 @@ Original license notices accompany the display assets under
 ### Manipulator collection
 
 `Manipulator` sits between `AI gen` and `Others`. Its four models are Vega,
-RB-Y1, Gento Luna and Taku. Each opens with bare wrists. One **EEF** selector
+RB-Y1, Gento Luna and Taku. The initial view is Dexmate Vega with LYRA-10. One **EEF** selector
 attaches the chosen human, robot or AI hand to both arms; **None** removes both.
 The opposite hand is a mirrored instance of the same original geometry.
+Changing manipulator models preserves the selected EEF, including an explicit
+None selection. Reloading restores the Dexmate/LYRA-10 initial view.
 
-Home uses a symmetric forward-leaning torso and forward-facing hands at tabletop
-working height. Spread restores the upright, straight-arm pose. Fold lowers the
+Home keeps the upper body vertical while bending the lower torso/support chain
+to reduce height, with forward-facing hands at tabletop working height. Spread restores the upright, straight-arm pose. Fold lowers the
 torso substantially and keeps the forearms forward in a bent working pose.
 These joint values are maintained in the local library's `preview_poses.json`
 and shared with the native MuJoCo launcher. Vega faces source +X, toward the
@@ -129,8 +131,8 @@ elapsed time so their duration is independent of rendering frame rate.
 
 Hand meshes and materials are loaded once and reused for each combination;
 there are no combination-specific GLBs. `attachment_profiles.json` records wrist
-roots and visual adapters. RUKA is centered on its actual base plate, whose
-center is about 33 mm from its source origin. Shadow retains `rh_forearm` and
+roots and visual adapters. RUKA and Unitree are centered on their actual base plates. RUKA's
+base center is about 33 mm from its source origin. Shadow retains `rh_forearm` and
 its complete base, wrist and finger geometry. World/floating standalone motion
 is excluded. Per-hand sliders and Open/Close hands remain available.
 
@@ -150,7 +152,7 @@ python scripts/validate_manipulator_studio.py \
 
 The independent FK validator checks Home, Spread, Fold and two sampled poses.
 `qa_manipulator_attachments.cjs` checks all 20 selectable hands, both mount graphs,
-actual joint motion and symmetry, rapid replacement/removal, RUKA/Shadow base
+actual joint motion and symmetry, rapid replacement/removal, RUKA/Shadow/Unitree base
 centering, and mobile layout. `qa_hand_studio.cjs` covers the original collections.
 Existing authoritative hand/foot GLBs and JSON are preserved byte-for-byte.
 

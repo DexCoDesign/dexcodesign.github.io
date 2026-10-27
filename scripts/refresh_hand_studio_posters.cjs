@@ -30,6 +30,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         const loading = document.querySelector('#studio-loading');
         return title?.textContent === name && loading?.hidden;
       }, record.name, { timeout: 60000 });
+      if (record.category === 'manipulator') await page.locator('#studio-eef').selectOption('none');
       await page.waitForTimeout(150);
       const target = path.join(out, `${record.id}.jpg`);
       await page.locator('#studio-viewport').screenshot({ path: target, type: 'jpeg', quality: 90 });

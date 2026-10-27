@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
-import {createHandInstance, composeAssembly, findNode} from './manipulator-attachments.js?v=61';
-import {createMotionPlan, sampleMotion} from './joint-motion.js?v=61';
+import {createHandInstance, composeAssembly, findNode} from './manipulator-attachments.js?v=62';
+import {createMotionPlan, sampleMotion} from './joint-motion.js?v=62';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '61';
-const posterVersion = '61';
+const studioVersion = '62';
+const posterVersion = '62';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -19,7 +19,7 @@ let model, root, joints = new Map(), sliders = new Map(), current = {}, target =
 const metadataCache = new Map(), sceneCache = new Map();
 let bodyModel = null, bodyJointNodes = new Map(), attachmentProfiles = null;
 const mountedHands = new Map();
-let handGeneration=0;
+let handGeneration=0, selectedEEF='lyra10';
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 let slowStart = {}, slowPlan = [], previousFrameTime=0;
 const viewShift = new THREE.Vector2();
@@ -304,6 +304,7 @@ async function choose(id){
     camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
     orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);
     selectedPose='neutral';buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
+    if(model.category==='manipulator'&&selectedEEF!=='none'){await chooseEEF();if(token!==generation)return;}
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
@@ -315,7 +316,7 @@ function configureEEFSelector(){
     for(const record of catalog.filter(row=>row.category===category))group.append(new Option(record.name,record.id));
     select.append(group);
   }
-  select.value='none';select.disabled=false;
+  select.value=[...select.options].some(option=>option.value===selectedEEF)?selectedEEF:'none';selectedEEF=select.value;select.disabled=false;
 }
 function rebuildAttachedPreview(initial={}){
   const previous={...current,...initial};model=composeAssembly(bodyModel,mountedHands.values());joints=new Map(bodyJointNodes);
@@ -324,8 +325,9 @@ function rebuildAttachedPreview(initial={}){
   $('counts').textContent=countText(model);$('status').textContent=mountedHands.size?'Optional hands attached · move the arm or finger joints to explore.':bodyModel.preview_note;dirty=true;
 }
 async function chooseEEF(){
+  selectedEEF=$('eef').value;
   if(!bodyModel)return;
-  const id=$('eef').value,bodyToken=generation,token=++handGeneration;
+  const id=selectedEEF,bodyToken=generation,token=++handGeneration;
   try{
     if(id==='none'){
       for(const hand of mountedHands.values())hand.group.removeFromParent();mountedHands.clear();rebuildAttachedPreview();return;
@@ -345,7 +347,7 @@ async function chooseEEF(){
     rebuildAttachedPreview(initial);
   }catch(error){
     if(generation!==bodyToken||token!==handGeneration)return;
-    $('eef').value=[...mountedHands.values()][0]?.id||'none';$('status').textContent=`End effector could not attach · ${error.message}`;console.error(error);
+    selectedEEF=[...mountedHands.values()][0]?.id||'none';$('eef').value=selectedEEF;$('status').textContent=`End effector could not attach · ${error.message}`;console.error(error);
   }
 }
 $('eef').onchange=chooseEEF;
@@ -358,4 +360,4 @@ function tick(now){requestAnimationFrame(tick);const dt=previousFrameTime?Math.m
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
 requestAnimationFrame(tick);
-fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;const params=new URLSearchParams(location.search),requested=catalog.find(r=>r.id===params.get('model')),collection=requested?.category||params.get('collection');if([...$('category').options].some(o=>o.value===collection))$('category').value=collection;category(requested?.id);}).catch(e=>{$('loading-text').textContent=e.message;});
+fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;const params=new URLSearchParams(location.search),requested=catalog.find(r=>r.id===params.get('model')),collection=requested?.category||params.get('collection')||'manipulator';if([...$('category').options].some(o=>o.value===collection))$('category').value=collection;category(requested?.id||($('category').value==='manipulator'?'dexmate_vega':undefined));}).catch(e=>{$('loading-text').textContent=e.message;});
