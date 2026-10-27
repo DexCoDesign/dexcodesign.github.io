@@ -124,6 +124,7 @@ def main():
                        for c in model['controls']} for name, values in preview_poses[mid].items()}
         manifest = json.loads((urdf.parent / 'manifest.json').read_text())
         model.update(base_model=manifest['base_model'], upright_node='link__' + upright_link, hand_mounts={side: 'link__' + side + '_eef_mount' for side in ('left', 'right')}, end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
+                     visual_accessories=manifest.get('visual_accessories', []),
                      poses=poses, motion_pairs=mirrored_joint_pairs(source, model['controls'], poses['spread']),
                      pose_order=['neutral', 'spread', 'fold'],
                      view_direction=[3, -2, 0.8], limits_are_placeholders=mid == 'dyna_taku',
