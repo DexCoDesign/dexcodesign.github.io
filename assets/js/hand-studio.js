@@ -223,7 +223,13 @@ function addBasicPoses(next){
   }
   for(const [name,pose] of Object.entries({neutral,spread,wrap,pinch}))next.poses[name]??=pose;
 }
-function pose(name){slow=false;selectedPose=name;target=values(model.poses[name]);buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;}
+function pose(name){
+  slow=false;selectedPose=name;target=values(model.poses[name]);
+  if(name==='neutral'&&model.category==='manipulator'){
+    camera.up.set(0,0,1);orbit.reset();
+  }
+  buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;
+}
 function buttons(){for(const b of $('actions').querySelectorAll('button'))b.classList.toggle('on',Boolean(b.dataset.pose===selectedPose&&!slow||b.dataset.slow&&slow));}
 function loopDependent(name){
   const loops=[...(model?.closed_loop_preview?[{prefix:'',preview:model.closed_loop_preview}]:[]),...(model?.attachment_loops||[])];
@@ -324,7 +330,7 @@ async function choose(id){
     const box=new THREE.Box3().setFromObject(root),center=rotationCenter(model),size=box.getSize(new THREE.Vector3());
     const radius=Math.max(size.x,size.y,size.z),direction=new THREE.Vector3(...(palmView[model.id]||model.view_direction||[.42,1,.28])).normalize();camera.up.set(0,0,1);
     camera.near=Math.max(radius/1000,.0001);camera.far=radius*100;camera.updateProjectionMatrix();
-    orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);
+    orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);orbit.saveState();
     selectedPose='neutral';buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     if(model.category==='manipulator'&&selectedEEF!=='none'){await chooseEEF();if(token!==generation)return;}
     loading(100);renderer.render(scene,camera);dirty=false;bodyLoading=false;syncLoadingState();

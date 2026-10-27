@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),out=process.env.QA_OUT||'/private/tmp/planar-base-qa';
-const probe=`\nglobalThis.inspectBase=()=>{root.updateMatrixWorld(true);const points={};root.traverse(node=>{if((node.name.startsWith('link__')&&!['link__mobile_world','link__mobile_base_x_link','link__mobile_base_y_link'].includes(node.name))||node.name.endsWith('_hand_attachment'))points[node.name]=node.getWorldPosition(new THREE.Vector3()).toArray();});return {id:model.id,controls:model.controls,points,q:{...current},joints:model.joints.map(j=>j.name),base:model.base_model};};`;
+const probe=`\nglobalThis.inspectBase=()=>{root.updateMatrixWorld(true);const points={};root.traverse(node=>{if((node.name.startsWith('link__')&&!['link__mobile_world','link__mobile_base_x_link','link__mobile_base_y_link'].includes(node.name))||node.name.endsWith('_hand_attachment'))points[node.name]=node.getWorldPosition(new THREE.Vector3()).toArray();});return {id:model.id,controls:model.controls,points,q:{...current},neutral:values(model.poses.neutral),slow,view:[...camera.position.toArray(),...camera.up.toArray(),...orbit.target.toArray(),camera.zoom,...viewShift.toArray()],joints:model.joints.map(j=>j.name),base:model.base_model};};`;
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
@@ -32,9 +32,23 @@ const probe=`\nglobalThis.inspectBase=()=>{root.updateMatrixWorld(true);const po
    }
    if(maxError>1e-8)throw new Error('Base did not move robot and both hands rigidly '+id+' '+maxError);
    if(id==='gento_luna'){await page.locator('#hand-studio').scrollIntoViewIfNeeded();await page.locator('#hand-studio').screenshot({path:path.join(out,'luna-virtual-base.png')});}
+   await page.getByRole('button',{name:'Fold',exact:true}).click();
+   await page.getByRole('button',{name:'Close hands',exact:true}).click();
+   await page.getByRole('button',{name:'Slow motion',exact:true}).click();
+   await page.locator('#hand-studio').scrollIntoViewIfNeeded();
+   const box=await page.locator('#studio-viewport').boundingBox();
+   await page.mouse.move(box.x+box.width*.45,box.y+box.height*.45);await page.mouse.down();
+   await page.mouse.move(box.x+box.width*.65,box.y+box.height*.6,{steps:8});await page.mouse.up();await page.mouse.wheel(0,-180);
+   await page.waitForFunction(view=>inspectBase().view.some((value,i)=>Math.abs(value-view[i])>1e-5),before.view);
    await page.getByRole('button',{name:'Home',exact:true}).click();
-   await page.waitForFunction(names=>names.every(n=>Math.abs(inspectBase().q[n])<1e-5),names);
-   records.push({id,baseControls:base.map(c=>c.label),rigidFrames:Object.keys(before.points).length,maxError});
+   await page.waitForFunction(()=>{const state=inspectBase();return !state.slow&&Object.entries(state.neutral).every(([name,value])=>Math.abs(state.q[name]-value)<1e-5);});
+   const restored=await page.evaluate(()=>inspectBase());
+   const viewError=Math.max(...before.view.map((value,i)=>Math.abs(value-restored.view[i])));
+   if(viewError>1e-8)throw new Error('Home did not restore the initial view '+id+' '+viewError);
+   await page.waitForTimeout(150);
+   if((await page.evaluate(()=>inspectBase())).slow)throw new Error('Home did not stop Slow motion '+id);
+   if(id==='dexmate_vega')await page.locator('#studio-viewport').screenshot({path:path.join(out,'home-reset.png')});
+   records.push({id,baseControls:base.map(c=>c.label),rigidFrames:Object.keys(before.points).length,maxError,homeResetsPoseAndView:true,viewError});
   }
   const report={records,errors};fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(errors.length)throw new Error('Browser errors');
