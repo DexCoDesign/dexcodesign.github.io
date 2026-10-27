@@ -15,7 +15,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   if(await page.locator('#studio-category').inputValue()!==record.category)await page.locator('#studio-category').selectOption(record.category);
   await page.locator('#studio-model').selectOption(record.id);
   await page.waitForFunction(name=>document.querySelector('#studio-name').textContent===name&&document.querySelector('#studio-loading').hidden,record.name,{timeout:60000});
-  if(record.category==='manipulator')await page.locator('#studio-eef').selectOption('none');
+  if(record.category==='manipulator'){await page.locator('#studio-eef').selectOption('none');await page.waitForFunction(()=>document.querySelector('#studio-loading').hidden);}
   await page.waitForTimeout(250);
   const controls=page.locator('#studio-controls input');if(await controls.count()!==record.counts.active)throw new Error('Control count mismatch '+record.id);
   await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'.png')});

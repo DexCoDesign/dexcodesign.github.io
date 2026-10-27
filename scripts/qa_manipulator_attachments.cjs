@@ -69,7 +69,7 @@ globalThis.inspectAssembly=()=>{
    expectedEEF=hand;
    tested.push({mobile,hand,controls:initial.controls,preservesEEF:true,tabletopForward:true,rigidAfterArmMotion:true});
   }
-  await page.locator('#studio-eef').selectOption('none');if((await checkGraph()).hands.length!==0)throw new Error('None must remove both hands');
+  await page.locator('#studio-eef').selectOption('none');await page.waitForFunction(()=>document.querySelector('#studio-loading').hidden);if((await checkGraph()).hands.length!==0)throw new Error('None must remove both hands');
   await page.locator('#studio-model').selectOption('rby1');await page.waitForFunction(()=>inspectAssembly().id==='rby1'&&document.querySelector('#studio-loading').hidden);
   if(await page.locator('#studio-eef').inputValue()!=='none'||(await checkGraph()).hands.length)throw new Error('Explicit None was lost on model change');
   await page.locator('#studio-model').selectOption('dyna_taku');await page.waitForFunction(()=>inspectAssembly().id==='dyna_taku'&&document.querySelector('#studio-loading').hidden);
@@ -89,7 +89,7 @@ globalThis.inspectAssembly=()=>{
   await page.locator('#studio-eef').selectOption('midas_hand');
   await page.waitForFunction(()=>inspectAssembly().hands.some(h=>h.id==='midas_hand'));
   await page.evaluate(()=>{const el=document.querySelector('#studio-eef');for(const value of ['mano','nacre18','none']){el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));}});
-  await page.waitForTimeout(500);if((await checkGraph()).hands.length!==0)throw new Error('Stale hand load survived a later None selection');
+  await page.waitForFunction(()=>inspectAssembly().hands.length===0&&document.querySelector('#studio-loading').hidden);if((await checkGraph()).hands.length!==0)throw new Error('Stale hand load survived a later None selection');
   await page.locator('#studio-eef').selectOption('midas_hand');await page.waitForFunction(()=>inspectAssembly().hands.length===2);
   await page.setViewportSize({width:390,height:844});await page.locator('#hand-studio').scrollIntoViewIfNeeded();await page.waitForTimeout(200);
   if(await page.locator('.studio').evaluate(el=>el.getBoundingClientRect().width>innerWidth))throw new Error('Mobile overflow');

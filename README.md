@@ -115,6 +115,11 @@ attaches the chosen human, robot or AI hand to both arms; **None** removes both.
 The opposite hand is a mirrored instance of the same original geometry.
 Changing manipulator models preserves the selected EEF, including an explicit
 None selection. Reloading restores the Dexmate/LYRA-10 initial view.
+Changing EEFs shows the loading preview and pauses joint motion, orbit controls,
+sliders, pose buttons and the EEF selector until the new hands are rendered.
+Cached hands also paint this loading state before cloning/uploading geometry.
+Model and collection selectors remain available to cancel the pending load;
+a failed replacement restores the previous hands and controls.
 
 Home keeps the upper body vertical while bending the lower torso/support chain
 to reduce height, with forward-facing hands at tabletop working height. Spread restores the upright, straight-arm pose. Fold lowers the
@@ -154,6 +159,8 @@ The independent FK validator checks Home, Spread, Fold and two sampled poses.
 `qa_manipulator_attachments.cjs` checks all 20 selectable hands, both mount graphs,
 actual joint motion and symmetry, rapid replacement/removal, RUKA/Shadow/Unitree base
 centering, and mobile layout. `qa_hand_studio.cjs` covers the original collections.
+`qa_eef_loading.cjs` checks delayed/cached loading, frozen controls, error recovery
+and cancellation while another model is loading.
 Existing authoritative hand/foot GLBs and JSON are preserved byte-for-byte.
 
 Refresh posters with `POSTER_MODELS=dexmate_vega,rby1,gento_luna,dyna_taku`.

@@ -7,7 +7,7 @@ import {createMotionPlan, sampleMotion} from './joint-motion.js?v=62';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '62';
+const studioVersion = '63';
 const posterVersion = '62';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
@@ -20,6 +20,7 @@ const metadataCache = new Map(), sceneCache = new Map();
 let bodyModel = null, bodyJointNodes = new Map(), attachmentProfiles = null;
 const mountedHands = new Map();
 let handGeneration=0, selectedEEF='lyra10';
+let bodyLoading=true, handLoading=false;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
 let slowStart = {}, slowPlan = [], previousFrameTime=0;
 const viewShift = new THREE.Vector2();
@@ -139,13 +140,29 @@ function loading(percent,text='Loading model'){
   const value=clamp(Math.floor(percent),0,100);
   $('progress').value=value;$('loading-text').textContent=`${text} · ${value}%`;
 }
+function syncLoadingState(){
+  const busy=bodyLoading||handLoading;
+  viewport.dataset.loading=String(busy);viewport.tabIndex=busy?-1:0;
+  viewport.closest('.studio').setAttribute('aria-busy',String(busy));
+  $('loading').hidden=!busy;orbit.enabled=!busy;$('eef').disabled=busy;
+  $('controls').inert=busy;$('actions').inert=busy;
+  for(const [name,{input}] of sliders)input.disabled=busy||loopDependent(name);
+  for(const button of $('actions').querySelectorAll('button'))button.disabled=busy;
+  if(!busy)$('poster').hidden=true;
+}
+async function paintLoadingState(){
+  // Cached scenes can still spend a frame cloning/uploading meshes. Paint the
+  // loading UI before doing that work, including when no network request occurs.
+  if(document.hidden)return;
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+}
 async function getMetadata(record){
   if(!metadataCache.has(record.id))metadataCache.set(record.id,fetch(`${record.metadata}?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Model metadata unavailable');return r.json();}).catch(e=>{metadataCache.delete(record.id);throw e;}));
   return metadataCache.get(record.id);
 }
-async function getScene(next,token){
+async function getScene(next,token,onProgress=percent=>loading(percent)){
   if(!sceneCache.has(next.id))sceneCache.set(next.id,loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{
-    if(token===generation&&e.total)loading(Math.min(99,100*e.loaded/e.total));
+    if(token===generation&&e.total)onProgress(Math.min(99,100*e.loaded/e.total));
   }).then(gltf=>{
     const converted=new Map();
     gltf.scene.traverse(node=>{
@@ -260,6 +277,7 @@ function buildControls(){
     }else target={...current};
     slow=!slow;clockStart=performance.now();buttons();dirty=true;
   };$('actions').append(b);
+  syncLoadingState();
 }
 function showReviewLegend(){
   const legend=$('review-legend');legend.replaceChildren();
@@ -279,7 +297,7 @@ function countText(next){
     `${next.counts.active} active · ${next.counts.coupled} coupled · ${next.counts.passive} passive`;
 }
 async function choose(id){
-  const token=++generation;handGeneration++;mountedHands.clear();bodyModel=null;bodyJointNodes.clear();$('mounts').hidden=true;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
+  const token=++generation;handGeneration++;bodyLoading=true;handLoading=false;mountedHands.clear();bodyModel=null;bodyJointNodes.clear();$('mounts').hidden=true;slow=false;syncLoadingState();loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
@@ -305,7 +323,7 @@ async function choose(id){
     orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);
     selectedPose='neutral';buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     if(model.category==='manipulator'&&selectedEEF!=='none'){await chooseEEF();if(token!==generation)return;}
-    loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
+    loading(100);renderer.render(scene,camera);dirty=false;bodyLoading=false;syncLoadingState();
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
 function configureEEFSelector(){
@@ -316,7 +334,7 @@ function configureEEFSelector(){
     for(const record of catalog.filter(row=>row.category===category))group.append(new Option(record.name,record.id));
     select.append(group);
   }
-  select.value=[...select.options].some(option=>option.value===selectedEEF)?selectedEEF:'none';selectedEEF=select.value;select.disabled=false;
+  select.value=[...select.options].some(option=>option.value===selectedEEF)?selectedEEF:'none';selectedEEF=select.value;syncLoadingState();
 }
 function rebuildAttachedPreview(initial={}){
   const previous={...current,...initial};model=composeAssembly(bodyModel,mountedHands.values());joints=new Map(bodyJointNodes);
@@ -328,33 +346,42 @@ async function chooseEEF(){
   selectedEEF=$('eef').value;
   if(!bodyModel)return;
   const id=selectedEEF,bodyToken=generation,token=++handGeneration;
+  handLoading=true;slow=false;target={...current};buttons();syncLoadingState();
+  $('poster').hidden=false;loading(0,'Loading end effector');$('status').textContent='Loading end effector…';
   try{
-    if(id==='none'){
-      for(const hand of mountedHands.values())hand.group.removeFromParent();mountedHands.clear();rebuildAttachedPreview();return;
-    }
-    $('status').textContent='Loading end effector…';
-    if(!attachmentProfiles)attachmentProfiles=fetch(`assets/models/studio/attachment_profiles.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Hand mounting profiles unavailable');return r.json();}).catch(error=>{attachmentProfiles=null;throw error;});
-    const record=catalog.find(row=>row.id===id),profiles=await attachmentProfiles;
-    const metadata=structuredClone(await getMetadata(record));addBasicPoses(metadata);
-    const template=await getScene(metadata,bodyToken);
+    await paintLoadingState();
     if(generation!==bodyToken||token!==handGeneration)return;
-    const additions=['left','right'].map(side=>{
-      const anchor=findNode(root,bodyModel.hand_mounts[side]);if(!anchor)throw new Error(`Missing ${side} wrist mount`);
-      return {anchor,instance:createHandInstance(record,metadata,template,profiles.hands[id],side)};
-    });
-    for(const old of mountedHands.values())old.group.removeFromParent();mountedHands.clear();
-    const initial={};for(const {anchor,instance} of additions){anchor.add(instance.group);mountedHands.set(instance.side,instance);Object.assign(initial,instance.poses[selectedPose==='fold'?'close':'open']);}
-    rebuildAttachedPreview(initial);
+    if(id==='none'){
+      for(const hand of mountedHands.values())hand.group.removeFromParent();mountedHands.clear();rebuildAttachedPreview();
+    }else{
+      if(!attachmentProfiles)attachmentProfiles=fetch(`assets/models/studio/attachment_profiles.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Hand mounting profiles unavailable');return r.json();}).catch(error=>{attachmentProfiles=null;throw error;});
+      const record=catalog.find(row=>row.id===id),profiles=await attachmentProfiles;
+      if(generation!==bodyToken||token!==handGeneration)return;
+      const metadata=structuredClone(await getMetadata(record));addBasicPoses(metadata);
+      if(generation!==bodyToken||token!==handGeneration)return;
+      const template=await getScene(metadata,bodyToken,percent=>{if(token===handGeneration)loading(percent,'Loading end effector');});
+      if(generation!==bodyToken||token!==handGeneration)return;
+      const additions=['left','right'].map(side=>{
+        const anchor=findNode(root,bodyModel.hand_mounts[side]);if(!anchor)throw new Error(`Missing ${side} wrist mount`);
+        return {anchor,instance:createHandInstance(record,metadata,template,profiles.hands[id],side)};
+      });
+      for(const old of mountedHands.values())old.group.removeFromParent();mountedHands.clear();
+      const initial={};for(const {anchor,instance} of additions){anchor.add(instance.group);mountedHands.set(instance.side,instance);Object.assign(initial,instance.poses[selectedPose==='fold'?'close':'open']);}
+      rebuildAttachedPreview(initial);
+    }
+    loading(100,'Loading end effector');renderer.render(scene,camera);dirty=false;
   }catch(error){
     if(generation!==bodyToken||token!==handGeneration)return;
     selectedEEF=[...mountedHands.values()][0]?.id||'none';$('eef').value=selectedEEF;$('status').textContent=`End effector could not attach · ${error.message}`;console.error(error);
+  }finally{
+    if(generation===bodyToken&&token===handGeneration){handLoading=false;syncLoadingState();}
   }
 }
 $('eef').onchange=chooseEEF;
 
 function category(preferredId){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length){const record=records.find(r=>r.id===preferredId)||records[0];$('model').value=record.id;choose(record.id);}else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=()=>category();$('model').onchange=()=>choose($('model').value);
-function tick(now){requestAnimationFrame(tick);const dt=previousFrameTime?Math.min((now-previousFrameTime)/1000,.25):1/60;previousFrameTime=now;if(!visible||document.hidden||!model)return;const poseBlend=1-Math.exp(-12*dt);let moving=false;
+function tick(now){requestAnimationFrame(tick);const dt=previousFrameTime?Math.min((now-previousFrameTime)/1000,.25):1/60;previousFrameTime=now;if(!visible||document.hidden||!model||bodyLoading||handLoading)return;const poseBlend=1-Math.exp(-12*dt);let moving=false;
   if(slow){current=sampleMotion(slowPlan,slowStart,now-clockStart);moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*poseBlend;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}

@@ -14,4 +14,5 @@
 @media(max-width:580px){.studio-review-legend{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .studio-mounts[hidden]{display:none}.studio-mounts{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--studio-line);background:#15212a}.studio-mounts label{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--studio-muted);text-transform:uppercase;letter-spacing:.09em}.studio-mounts select{min-width:175px;max-width:240px}.studio-mounts>span{margin-left:auto;font-size:10px;color:var(--studio-muted)}
+.studio[aria-busy="true"] #studio-controls,.studio[aria-busy="true"] #studio-actions{opacity:.45;cursor:wait}.studio[aria-busy="true"] :is(input,button:disabled,select:disabled){cursor:wait}.studio select:disabled{opacity:.5}#studio-loading{pointer-events:auto;cursor:wait}
 @media(max-width:800px){.studio-mounts{gap:10px;padding:12px}.studio-mounts label{display:block;flex:1;min-width:0}.studio-mounts select{display:block;margin-top:6px;min-width:0;width:100%}.studio-mounts>span{width:100%;margin:0}}
