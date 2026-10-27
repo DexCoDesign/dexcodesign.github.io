@@ -122,9 +122,16 @@ Model and collection selectors remain available to cancel the pending load;
 a failed replacement restores the previous hands and controls.
 
 All four models share three virtual base controls: Base X, Base Y (±50 mm),
-and Base yaw (±5 degrees). Wheel and steering motor coordinates are fixed and
+and Base yaw (±20 degrees). Wheel and steering motor coordinates are fixed and
 absent from the controls and Slow motion. The complete robot and both mounted
 hands move rigidly with the virtual base; no wheel rolling or drive model is used.
+
+Gento Luna now uses the vendor V3.0 M6SLite package supplied on 2026-10-26.
+It includes the separate shoulder housings absent from the April source model.
+The original arm frames and limits are from V3; canonical joint names remain
+stable and Home/Spread/Fold were refitted to the previous physical flange poses.
+Factory grippers are removed. Base yaw spans ±20 degrees. MANO uses an explicit
+natural skin display color; its original mesh and kinematics remain unchanged.
 
 Home keeps the upper body vertical while bending the lower torso/support chain
 to reduce height, with forward-facing hands at tabletop working height. Spread restores the upright, straight-arm pose. Fold lowers the

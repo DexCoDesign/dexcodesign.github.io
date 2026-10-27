@@ -7,8 +7,8 @@ import {createMotionPlan, sampleMotion} from './joint-motion.js?v=62';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '64';
-const posterVersion = '64';
+const studioVersion = '66';
+const posterVersion = '66';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -168,7 +168,11 @@ async function getScene(next,token,onProgress=percent=>loading(percent)){
     gltf.scene.traverse(node=>{
       if(!node.isMesh)return;
       const convert=material=>{
-        if(!converted.has(material))converted.set(material,displayMaterial(material));
+        if(!converted.has(material)){
+          const shown=displayMaterial(material);
+          if(next.id==='mano')shown.color.set('#d6a88e');
+          converted.set(material,shown);
+        }
         return converted.get(material);
       };
       node.material=Array.isArray(node.material)?node.material.map(convert):convert(node.material);

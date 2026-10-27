@@ -113,6 +113,8 @@ def main():
         shoulder_joint = {'dexmate_vega': 'L_arm_j1', 'rby1': 'left_arm_0',
                           'gento_luna': 'Arm_L1_Joint', 'dyna_taku': 'left_shoulder_pitch_joint'}[mid]
         upright_link = source.find(f"joint[@name='{shoulder_joint}']/parent").get('link')
+        if mid == 'gento_luna':
+            upright_link = 'Gento Luna_Leg_J6_Link'
         for control in model['controls']:
             control['group'] = group(control['name'])
             if control['name'].startswith('mobile_base_'):
