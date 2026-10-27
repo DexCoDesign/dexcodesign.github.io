@@ -288,19 +288,6 @@
       "metadata": "assets/models/studio/rby1.json"
     },
     {
-      "id": "galaxea_r1",
-      "name": "Galaxea R1",
-      "category": "manipulator",
-      "side": "whole robot",
-      "counts": {
-        "active": 22,
-        "coupled": 0,
-        "passive": 0
-      },
-      "bytes": 6100680,
-      "metadata": "assets/models/studio/galaxea_r1.json"
-    },
-    {
       "id": "gento_luna",
       "name": "Gento Luna",
       "category": "manipulator",

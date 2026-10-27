@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
+import {createHandInstance, composeAssembly, findNode} from './manipulator-attachments.js?v=61';
+import {createMotionPlan, sampleMotion} from './joint-motion.js?v=61';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '59';
-const posterVersion = '59';
+const studioVersion = '61';
+const posterVersion = '61';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -15,8 +17,11 @@ const visualPassiveResponse = {
 };
 let model, root, joints = new Map(), sliders = new Map(), current = {}, target = {}, catalog = [], generation = 0;
 const metadataCache = new Map(), sceneCache = new Map();
+let bodyModel = null, bodyJointNodes = new Map(), attachmentProfiles = null;
+const mountedHands = new Map();
+let handGeneration=0;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
-let slowStart = {}, slowEnd = {};
+let slowStart = {}, slowPlan = [], previousFrameTime=0;
 const viewShift = new THREE.Vector2();
 const viewport = $('viewport');
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -199,15 +204,18 @@ function addBasicPoses(next){
 }
 function pose(name){slow=false;selectedPose=name;target=values(model.poses[name]);buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;}
 function buttons(){for(const b of $('actions').querySelectorAll('button'))b.classList.toggle('on',Boolean(b.dataset.pose===selectedPose&&!slow||b.dataset.slow&&slow));}
-function loopDependent(name){return Boolean(model?.closed_loop_preview&&/(?:index|middle|ring)_dip(?:_linkage)?_joint$/.test(name));}
+function loopDependent(name){
+  const loops=[...(model?.closed_loop_preview?[{prefix:'',preview:model.closed_loop_preview}]:[]),...(model?.attachment_loops||[])];
+  return loops.some(({prefix})=>name.startsWith(prefix)&&/(?:index|middle|ring)_dip(?:_linkage)?_joint$/.test(name.slice(prefix.length)));
+}
 function closeMidasLoops(q){
-  if(!model.closed_loop_preview)return;
-  for(const [finger, samples] of Object.entries(model.closed_loop_preview.fingers)){
-    const pip=clamp(q[`${finger}_pip_joint`]??0,samples.at(-1)[0],samples[0][0]);
+  const loops=[...(model.closed_loop_preview?[{prefix:'',preview:model.closed_loop_preview}]:[]),...(model.attachment_loops||[])];
+  for(const {prefix,preview} of loops)for(const [finger,samples] of Object.entries(preview.fingers)){
+    const pip=clamp(q[`${prefix}${finger}_pip_joint`]??0,samples.at(-1)[0],samples[0][0]);
     let i=1;while(i<samples.length-1&&samples[i][0]>pip)i++;
     const a=samples[i-1],b=samples[i],t=(pip-a[0])/(b[0]-a[0]);
-    q[`${finger}_dip_joint`]=a[1]+t*(b[1]-a[1]);
-    q[`${finger}_dip_linkage_joint`]=a[2]+t*(b[2]-a[2]);
+    q[`${prefix}${finger}_dip_joint`]=a[1]+t*(b[1]-a[1]);
+    q[`${prefix}${finger}_dip_linkage_joint`]=a[2]+t*(b[2]-a[2]);
   }
 }
 function apply(q){
@@ -217,7 +225,7 @@ function apply(q){
     if(resolving.has(j.name))throw new Error('Cyclic mimic joint');
     resolving.add(j.name);
     const src=j.mimic?model.joints.find(x=>x.name===j.mimic.source):null;
-    const preview=visualPassiveResponse[model.id]?.[j.name];
+    const preview=j.visual_mimic||visualPassiveResponse[model.id]?.[j.name];
     // Passive joints are not actuators. This is an explicitly visual response
     // to a neighboring active joint, not a source-URDF mimic or force model.
     const v=src?resolve(src)*j.mimic.multiplier+j.mimic.offset:
@@ -239,20 +247,16 @@ function buildControls(){
   }
   $('actions').replaceChildren();
   for(const name of (model.pose_order||(model.category==='others'?['neutral','flex']:basicPoses))){const b=document.createElement('button');b.textContent=model.category==='manipulator'&&name==='neutral'?'Home':name[0].toUpperCase()+name.slice(1);b.dataset.pose=name;b.onclick=()=>pose(name);$('actions').append(b);}
+  if(model.category==='manipulator'&&model.hand_controls){
+    for(const [name,text] of [['open','Open hands'],['close','Close hands']]){
+      const button=document.createElement('button');button.textContent=text;button.dataset.handPose=name;
+      button.onclick=()=>{slow=false;selectedPose='';target={...current,...model.hand_poses[name]};buttons();dirty=true;};$('actions').append(button);
+    }
+  }
   const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{
     if(!slow){
-      slowStart={...current};slowEnd={};
-      const preferred=values(model.poses[selectedPose==='neutral'?(model.category==='manipulator'?'reach':model.category==='others'?'flex':'wrap'):selectedPose]||model.poses.neutral);
-      for(const c of model.controls){
-        const start=slowStart[c.name],span=c.upper-c.lower;
-        if(model.category==='manipulator'){slowEnd[c.name]=preferred[c.name];continue;}
-        if(loopDependent(c.name)){slowEnd[c.name]=start;continue;}
-        if(span<=1e-8){slowEnd[c.name]=start;continue;}
-        if(Math.abs(preferred[c.name]-start)>=.12*span){slowEnd[c.name]=preferred[c.name];continue;}
-        const bound=c.upper-start>=start-c.lower?c.upper:c.lower;
-        slowEnd[c.name]=clamp(start+.65*(bound-start),c.lower,c.upper);
-      }
-      $('status').textContent=model.category==='manipulator'?model.preview_note:'Slow preview sweeps every active DoF; passive joints follow the visual response shown in the model.';
+      slowStart={...current};slowPlan=createMotionPlan(model,slowStart,loopDependent);
+      $('status').textContent=model.category==='manipulator'?'All movable joints · paired arms and hands move symmetrically.':'Every independent joint moves; coupled and passive joints follow their source relationships.';
     }else target={...current};
     slow=!slow;clockStart=performance.now();buttons();dirty=true;
   };$('actions').append(b);
@@ -269,13 +273,13 @@ function showReviewLegend(){
   }
 }
 function countText(next){
-  if(next.category==='manipulator')return `${next.counts.active} joint controls · whole robot`;
+  if(next.category==='manipulator')return next.hand_controls?`${next.body_controls} body joints · ${next.hand_controls} hand joints`:`${next.counts.active} joint controls · whole robot`;
   return next.closed_loop_preview?
     `${next.counts.active} URDF joints · 6 source-loop joints follow PIP in this preview`:
     `${next.counts.active} active · ${next.counts.coupled} coupled · ${next.counts.passive} passive`;
 }
 async function choose(id){
-  const token=++generation;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
+  const token=++generation;handGeneration++;mountedHands.clear();bodyModel=null;bodyJointNodes.clear();$('mounts').hidden=true;slow=false;viewport.dataset.loading='true';$('loading').hidden=false;loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
@@ -292,6 +296,7 @@ async function choose(id){
     if(next.category==='ai'&&next.display_reflection&&next.id!=='talon9')root.scale.x=-1;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});addBasicPoses(next);model=next;scene.add(root);joints.clear();
     for(const j of model.joints){const n=root.getObjectByName(j.node)||root.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(j.node));if(!n)throw new Error('Missing joint node: '+j.node);joints.set(j.name,n);}
+    if(model.category==='manipulator'){bodyModel=model;bodyJointNodes=new Map(joints);configureEEFSelector();}
     $('name').textContent=record.name;$('counts').textContent=countText(model);
     buildControls();showReviewLegend();current=values(model.poses.neutral||{});target={...current};apply(current);root.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(root),center=rotationCenter(model),size=box.getSize(new THREE.Vector3());
@@ -302,11 +307,54 @@ async function choose(id){
     loading(100);renderer.render(scene,camera);dirty=false;viewport.dataset.loading='false';$('poster').hidden=true;$('loading').hidden=true;
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
+function configureEEFSelector(){
+  $('mounts').hidden=false;
+  const select=$('eef');select.replaceChildren(new Option('None (bare wrists)','none'));
+  for(const [category,label] of [['hand','Human'],['robot','Robot hands'],['ai','AI gen']]){
+    const group=document.createElement('optgroup');group.label=label;
+    for(const record of catalog.filter(row=>row.category===category))group.append(new Option(record.name,record.id));
+    select.append(group);
+  }
+  select.value='none';select.disabled=false;
+}
+function rebuildAttachedPreview(initial={}){
+  const previous={...current,...initial};model=composeAssembly(bodyModel,mountedHands.values());joints=new Map(bodyJointNodes);
+  for(const hand of mountedHands.values())for(const [name,node] of hand.nodes)joints.set(name,node);
+  slow=false;buildControls();current=values(previous);target={...current};apply(current);buttons();
+  $('counts').textContent=countText(model);$('status').textContent=mountedHands.size?'Optional hands attached · move the arm or finger joints to explore.':bodyModel.preview_note;dirty=true;
+}
+async function chooseEEF(){
+  if(!bodyModel)return;
+  const id=$('eef').value,bodyToken=generation,token=++handGeneration;
+  try{
+    if(id==='none'){
+      for(const hand of mountedHands.values())hand.group.removeFromParent();mountedHands.clear();rebuildAttachedPreview();return;
+    }
+    $('status').textContent='Loading end effector…';
+    if(!attachmentProfiles)attachmentProfiles=fetch(`assets/models/studio/attachment_profiles.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Hand mounting profiles unavailable');return r.json();}).catch(error=>{attachmentProfiles=null;throw error;});
+    const record=catalog.find(row=>row.id===id),profiles=await attachmentProfiles;
+    const metadata=structuredClone(await getMetadata(record));addBasicPoses(metadata);
+    const template=await getScene(metadata,bodyToken);
+    if(generation!==bodyToken||token!==handGeneration)return;
+    const additions=['left','right'].map(side=>{
+      const anchor=findNode(root,bodyModel.hand_mounts[side]);if(!anchor)throw new Error(`Missing ${side} wrist mount`);
+      return {anchor,instance:createHandInstance(record,metadata,template,profiles.hands[id],side)};
+    });
+    for(const old of mountedHands.values())old.group.removeFromParent();mountedHands.clear();
+    const initial={};for(const {anchor,instance} of additions){anchor.add(instance.group);mountedHands.set(instance.side,instance);Object.assign(initial,instance.poses[selectedPose==='fold'?'close':'open']);}
+    rebuildAttachedPreview(initial);
+  }catch(error){
+    if(generation!==bodyToken||token!==handGeneration)return;
+    $('eef').value=[...mountedHands.values()][0]?.id||'none';$('status').textContent=`End effector could not attach · ${error.message}`;console.error(error);
+  }
+}
+$('eef').onchange=chooseEEF;
+
 function category(preferredId){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length){const record=records.find(r=>r.id===preferredId)||records[0];$('model').value=record.id;choose(record.id);}else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=()=>category();$('model').onchange=()=>choose($('model').value);
-function tick(now){requestAnimationFrame(tick);if(!visible||document.hidden||!model)return;let moving=false;
-  if(slow){const x=(1-Math.cos((now-clockStart)*.00085))/2;for(const c of model.controls)current[c.name]=slowStart[c.name]*(1-x)+slowEnd[c.name]*x;moving=true;}
-  else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*.15;moving=true;}else current[c.name]=target[c.name];}}
+function tick(now){requestAnimationFrame(tick);const dt=previousFrameTime?Math.min((now-previousFrameTime)/1000,.25):1/60;previousFrameTime=now;if(!visible||document.hidden||!model)return;const poseBlend=1-Math.exp(-12*dt);let moving=false;
+  if(slow){current=sampleMotion(slowPlan,slowStart,now-clockStart);moving=true;}
+  else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*poseBlend;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
 }
 requestAnimationFrame(tick);

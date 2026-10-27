@@ -48,9 +48,9 @@ Three.js 0.180.0 is vendored under `assets/vendor/three` (MIT); only one model i
 loaded at a time. No Python, GPU server, WebSocket, or CDN is required in production.
 GitHub Pages serves the meshes, joint metadata, and scripts as ordinary files.
 
-The catalog has 21 hand/foot models plus five whole-body mobile manipulators:
+The catalog has 21 hand/foot models plus four whole-body mobile manipulators:
 MANO under **Hand**, nine real embodiments under **Robot hand**, ten generated
-concepts under **AI gen**, Dexmate Vega, Rainbow RB-Y1, Galaxea R1, Gento Luna and DYNA Taku
+concepts under **AI gen**, Dexmate Vega, Rainbow RB-Y1, Gento Luna and DYNA Taku
 under **Manipulator**, and the SUPR foot under **Others**.
 The active/coupled counts describe the project's direct-motor
 simulation assets, not necessarily the manufacturer's original transmission.
@@ -109,33 +109,51 @@ Original license notices accompany the display assets under
 
 ### Manipulator collection
 
-`Manipulator` is between `AI gen` and `Others` and uses the same 3D viewer and
-joint sliders. Home, Reach and Fold are visual joint configurations; Slow
-motion interpolates those configurations. Sliders are grouped by mobile base,
-torso, head, left arm, right arm. The whole-body bounds determine
-the orbit pivot and camera fit. Open `?collection=manipulator#hand-studio`, or
-add `&model=dyna_taku`, to link directly to the collection/model.
+`Manipulator` sits between `AI gen` and `Others`. Its four models are Vega,
+RB-Y1, Gento Luna and Taku. Each opens with bare wrists. One **EEF** selector
+attaches the chosen human, robot or AI hand to both arms; **None** removes both.
+The opposite hand is a mirrored instance of the same original geometry.
 
-Only the new mobile-manipulator assets are exported from the local
-DexCoDesign mobile library. Existing Skynet-derived hand assets are preserved.
-All five use colored bare-wrist `body/robot.urdf` descriptions. Source visual
-materials are retained for Dexmate, RB-Y1, Galaxea and Taku. Luna uses warm gray
-and a black visor approximating official product photos; its vendor RGB are
-placeholders. Original hands, grippers and Taku baked gripper housings/wrist
-cameras are removed. Taku is reconstructed from DYNA public web assets. Taku's display limits are explicitly marked as placeholders. These
-previews do not validate dynamics, collision avoidance or manipulation tasks.
+Home uses a symmetric forward-leaning torso and forward-facing hands at tabletop
+working height. Spread restores the upright, straight-arm pose. Fold lowers the
+torso substantially and keeps the forearms forward in a bent working pose.
+These joint values are maintained in the local library's `preview_poses.json`
+and shared with the native MuJoCo launcher. Vega faces source +X, toward the
+protruding base; its physical left/right use vendor L/R.
+
+Slow motion animates every movable independent joint within its limits. Mirror
+signs and offsets come from the source joint axes; paired arms and hands share
+one motion track. Mimic followers, MIDAS fingertip loops and KESTREL's passive
+palm response retain their existing visual relationships. Pose transitions use
+elapsed time so their duration is independent of rendering frame rate.
+
+Hand meshes and materials are loaded once and reused for each combination;
+there are no combination-specific GLBs. `attachment_profiles.json` records wrist
+roots and visual adapters. RUKA is centered on its actual base plate, whose
+center is about 33 mm from its source origin. Shadow retains `rh_forearm` and
+its complete base, wrist and finger geometry. World/floating standalone motion
+is excluded. Per-hand sliders and Open/Close hands remain available.
+
+The four mobile models use `body/robot.urdf` with original end effectors removed.
+Source visual materials are retained for Vega, RB-Y1 and Taku. Luna's warm gray
+shell and black visor approximate official photos, replacing vendor RGB
+placeholders. Taku is a public-web reconstruction with placeholder limits.
+The viewer validates neither contacts nor dynamics.
 
 ```sh
 python scripts/export_manipulator_studio.py \
   --asset-root /path/to/DexCoDesign/assets/mobile_manipulators
+python scripts/export_attachment_profiles.py
 python scripts/validate_manipulator_studio.py \
   --asset-root /path/to/DexCoDesign/assets/mobile_manipulators
 ```
 
-The manipulator validator compares every link/frame against an independent
-URDF parser at the three displayed poses and two sampled configurations.
-`validate_hand_studio.py` continues to validate only the hand/foot collections.
-Run `refresh_hand_studio_posters.cjs` with
-`POSTER_MODELS=dexmate_vega,rby1,galaxea_r1,gento_luna,dyna_taku` after export to capture the
-five corresponding loading posters. No simulation server is needed to host
-the collection.
+The independent FK validator checks Home, Spread, Fold and two sampled poses.
+`qa_manipulator_attachments.cjs` checks all 20 selectable hands, both mount graphs,
+actual joint motion and symmetry, rapid replacement/removal, RUKA/Shadow base
+centering, and mobile layout. `qa_hand_studio.cjs` covers the original collections.
+Existing authoritative hand/foot GLBs and JSON are preserved byte-for-byte.
+
+Refresh posters with `POSTER_MODELS=dexmate_vega,rby1,gento_luna,dyna_taku`.
+Open `?collection=manipulator&model=dyna_taku#hand-studio` for the collection.
+The deployed site needs static hosting only.

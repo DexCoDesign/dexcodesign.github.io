@@ -18,7 +18,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.waitForTimeout(250);
   const controls=page.locator('#studio-controls input');if(await controls.count()!==record.counts.active)throw new Error('Control count mismatch '+record.id);
   await page.locator('#studio-viewport').screenshot({path:path.join(out,record.id+'.png')});
-  const expected=record.category==='manipulator'?['Home','Reach','Fold']:record.category==='others'?['Neutral','Flex']:['Neutral','Spread','Wrap','Pinch'];
+  const expected=record.category==='manipulator'?['Home','Spread','Fold']:record.category==='others'?['Neutral','Flex']:['Neutral','Spread','Wrap','Pinch'];
   const names=await page.locator('#studio-actions button[data-pose]').allTextContents();
   if(JSON.stringify(names)!==JSON.stringify(expected))throw new Error('Pose buttons mismatch '+record.id+': '+names);
   for(const name of expected){
