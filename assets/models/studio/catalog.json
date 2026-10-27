@@ -267,11 +267,11 @@
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
-        "active": 26,
+        "active": 23,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 10031864,
+      "bytes": 10032016,
       "metadata": "assets/models/studio/dexmate_vega.json"
     },
     {
@@ -280,11 +280,11 @@
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
-        "active": 26,
+        "active": 25,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 9627284,
+      "bytes": 9627432,
       "metadata": "assets/models/studio/rby1.json"
     },
     {
@@ -293,11 +293,11 @@
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
-        "active": 22,
+        "active": 25,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 15024752,
+      "bytes": 15024900,
       "metadata": "assets/models/studio/gento_luna.json"
     },
     {
@@ -306,11 +306,11 @@
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
-        "active": 29,
+        "active": 24,
         "coupled": 0,
         "passive": 0
       },
-      "bytes": 7462824,
+      "bytes": 7462976,
       "metadata": "assets/models/studio/dyna_taku.json"
     },
     {

@@ -121,6 +121,11 @@ Cached hands also paint this loading state before cloning/uploading geometry.
 Model and collection selectors remain available to cancel the pending load;
 a failed replacement restores the previous hands and controls.
 
+All four models share three virtual base controls: Base X, Base Y (±50 mm),
+and Base yaw (±5 degrees). Wheel and steering motor coordinates are fixed and
+absent from the controls and Slow motion. The complete robot and both mounted
+hands move rigidly with the virtual base; no wheel rolling or drive model is used.
+
 Home keeps the upper body vertical while bending the lower torso/support chain
 to reduce height, with forward-facing hands at tabletop working height. Spread restores the upright, straight-arm pose. Fold lowers the
 torso substantially and keeps the forearms forward in a bent working pose.
@@ -161,6 +166,8 @@ actual joint motion and symmetry, rapid replacement/removal, RUKA/Shadow/Unitree
 centering, and mobile layout. `qa_hand_studio.cjs` covers the original collections.
 `qa_eef_loading.cjs` checks delayed/cached loading, frozen controls, error recovery
 and cancellation while another model is loading.
+`qa_planar_base.cjs` checks all three base controls and the rigid motion of every
+robot link and both mounted hands, including Gento Luna.
 Existing authoritative hand/foot GLBs and JSON are preserved byte-for-byte.
 
 Refresh posters with `POSTER_MODELS=dexmate_vega,rby1,gento_luna,dyna_taku`.

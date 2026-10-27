@@ -22,6 +22,8 @@ MODELS = {
 
 def group(name):
     low = name.lower()
+    if low.startswith('mobile_base_'):
+        return 'Mobile base'
     if 'wheel' in low or low.startswith('agv_'):
         return 'Mobile base'
     if any(word in low for word in ['head', 'neck']):
@@ -113,15 +115,18 @@ def main():
         upright_link = source.find(f"joint[@name='{shoulder_joint}']/parent").get('link')
         for control in model['controls']:
             control['group'] = group(control['name'])
+            if control['name'].startswith('mobile_base_'):
+                control['label'] = {'mobile_base_x': 'Base X', 'mobile_base_y': 'Base Y',
+                                    'mobile_base_yaw': 'Base yaw'}[control['name']]
         poses = {name: {c['name']: max(c['lower'], min(c['upper'], values.get(c['name'], 0)))
                        for c in model['controls']} for name, values in preview_poses[mid].items()}
         manifest = json.loads((urdf.parent / 'manifest.json').read_text())
-        model.update(upright_node='link__' + upright_link, hand_mounts={side: 'link__' + side + '_eef_mount' for side in ('left', 'right')}, end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
+        model.update(base_model=manifest['base_model'], upright_node='link__' + upright_link, hand_mounts={side: 'link__' + side + '_eef_mount' for side in ('left', 'right')}, end_effectors_removed=True, color_basis=manifest['color_basis'], side='whole robot', root_link=root_link,
                      poses=poses, motion_pairs=mirrored_joint_pairs(source, model['controls'], poses['spread']),
                      pose_order=['neutral', 'spread', 'fold'],
                      view_direction=[3, -2, 0.8], limits_are_placeholders=mid == 'dyna_taku',
                      preview_note=('Whole-body joint preview. Taku ranges are display placeholders.' if mid == 'dyna_taku'
-                                   else 'Whole-body joint preview. Use the sliders to explore the base, torso and arms.'))
+                                   else 'Virtual X/Y/yaw base · wheel motors fixed. Explore the torso, arms and hands.'))
         meta_path.write_text(json.dumps(model, separators=(',', ':')) + '\n')
         records.append({**row, 'side': 'whole robot'})
     index = next((i for i, row in enumerate(original['records']) if row['category'] == 'others'), len(original['records']))
