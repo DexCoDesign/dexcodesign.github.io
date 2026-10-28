@@ -95,7 +95,7 @@ def main():
     args = parser.parse_args()
     catalog_path = OUT / 'catalog.json'
     original = json.loads(catalog_path.read_text())
-    original['records'] = [row for row in original['records'] if row['category'] != 'manipulator']
+    original['records'] = [row for row in original['records'] if row['id'] not in {*MODELS, 'galaxea_r1'}]
     records = []
     preview_poses = json.loads((args.asset_root / 'preview_poses.json').read_text())
     for mid, (name, relative, _) in MODELS.items():
@@ -132,7 +132,7 @@ def main():
                                    else 'Virtual X/Y/yaw base · wheel motors fixed. Explore the torso, arms and hands.'))
         meta_path.write_text(json.dumps(model, separators=(',', ':')) + '\n')
         records.append({**row, 'side': 'whole robot'})
-    index = next((i for i, row in enumerate(original['records']) if row['category'] == 'others'), len(original['records']))
+    index = next((i for i, row in enumerate(original['records']) if row['category'] in {'manipulator','others'}), len(original['records']))
     original['records'][index:index] = records
     catalog_path.write_text(json.dumps(original, indent=2) + '\n')
     print(json.dumps({'added_manipulators': list(MODELS), 'catalog_count': len(original['records'])}))

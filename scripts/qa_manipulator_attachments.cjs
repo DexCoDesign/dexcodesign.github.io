@@ -29,7 +29,7 @@ globalThis.inspectAssembly=()=>{
   await page.waitForFunction(()=>document.querySelector('#studio-loading').hidden);
   const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/models/studio/catalog.json'),'utf8'));
   const manipulators=catalog.records.filter(r=>r.category==='manipulator');
-  if(manipulators.length!==4||catalog.records.some(r=>r.id==='galaxea_r1'))throw new Error('Manipulator collection must contain four models without Galaxea');
+  if(manipulators.length!==8||catalog.records.some(r=>r.id==='galaxea_r1'))throw new Error('Manipulator collection must contain eight models without Galaxea');
   const combinations=[['dexmate_vega','wuji_hand_2'],['rby1','mano'],['gento_luna','nacre18'],['dyna_taku','midas_hand']];
   const tested=[];let expectedEEF='lyra10';
   const startup=await page.evaluate(()=>inspectAssembly());

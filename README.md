@@ -48,10 +48,10 @@ Three.js 0.180.0 is vendored under `assets/vendor/three` (MIT); only one model i
 loaded at a time. No Python, GPU server, WebSocket, or CDN is required in production.
 GitHub Pages serves the meshes, joint metadata, and scripts as ordinary files.
 
-The catalog has 21 hand/foot models plus four whole-body mobile manipulators:
+The catalog has 21 hand/foot models plus eight bimanual manipulators:
 MANO under **Hand**, nine real embodiments under **Robot hand**, ten generated
-concepts under **AI gen**, Dexmate Vega, Rainbow RB-Y1, Gento Luna and DYNA Taku
-under **Manipulator**, and the SUPR foot under **Others**.
+concepts under **AI Hand**, Dexmate Vega, Rainbow RB-Y1, Gento Luna, DYNA Taku,
+Franka FR3, Kinova Gen3, ALOHA 2 and OpenArm 2.0 under **Manipulator**, and the SUPR foot under **Others**.
 The active/coupled counts describe the project's direct-motor
 simulation assets, not necessarily the manufacturer's original transmission.
 AI concepts are reflected into the same right-hand convention; both transforms
@@ -109,8 +109,8 @@ Original license notices accompany the display assets under
 
 ### Manipulator collection
 
-`Manipulator` sits between `AI gen` and `Others`. Its four models are Vega,
-RB-Y1, Gento Luna and Taku. The initial view is Dexmate Vega with LYRA-10. One **EEF** selector
+`Manipulator` sits between `AI Hand` and `Others`. Its eight models are Vega,
+RB-Y1, Gento Luna, Taku, Franka FR3, Kinova Gen3, ALOHA 2 and OpenArm 2.0. The initial view is Dexmate Vega with LYRA-10. One **EEF** selector
 attaches the chosen human, robot or AI hand to both arms; **None** removes both.
 The opposite hand is a mirrored instance of the same original geometry.
 Changing manipulator models preserves the selected EEF, including an explicit
@@ -180,3 +180,13 @@ Existing authoritative hand/foot GLBs and JSON are preserved byte-for-byte.
 Refresh posters with `POSTER_MODELS=dexmate_vega,rby1,gento_luna,dyna_taku`.
 Open `?collection=manipulator&model=dyna_taku#hand-studio` for the collection.
 The deployed site needs static hosting only.
+
+### Fixed-lift bimanual arms
+
+Franka FR3, Kinova Gen3, ALOHA 2 (dual ViperX), and OpenArm 2.0 use the same fixed lift and 45° mount. The base adds no controls. The final mount has thicker U-cradle walls, a narrow inner housing in the same dark gray, and five upper-rim screw caps per side. Native left/right arm limits, joint frames and Home configurations are retained. Per-flange fixed adapters align the mirrored EEFs; sampled arm IK keeps the tools symmetric during Slow motion without imposing equal joint angles.
+
+```sh
+python scripts/export_bimanual_studio.py --project-root /path/to/DexCoDesign
+```
+
+This adds the four arms without regenerating existing mobile or hand models.

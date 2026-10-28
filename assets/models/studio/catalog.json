@@ -314,6 +314,58 @@
       "metadata": "assets/models/studio/dyna_taku.json"
     },
     {
+      "id": "franka_fr3",
+      "name": "Franka FR3",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 14,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 4683760,
+      "metadata": "assets/models/studio/franka_fr3.json"
+    },
+    {
+      "id": "kinova_gen3",
+      "name": "Kinova Gen3",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 14,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 2044384,
+      "metadata": "assets/models/studio/kinova_gen3.json"
+    },
+    {
+      "id": "aloha2",
+      "name": "ALOHA 2 \u00b7 dual ViperX",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 12,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 377480,
+      "metadata": "assets/models/studio/aloha2.json"
+    },
+    {
+      "id": "openarm2",
+      "name": "OpenArm 2.0",
+      "category": "manipulator",
+      "side": "whole robot",
+      "counts": {
+        "active": 14,
+        "coupled": 0,
+        "passive": 0
+      },
+      "bytes": 3604456,
+      "metadata": "assets/models/studio/openarm2.json"
+    },
+    {
       "id": "supr_female_foot",
       "name": "SUPR Foot",
       "category": "others",

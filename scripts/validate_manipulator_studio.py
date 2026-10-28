@@ -18,13 +18,17 @@ from export_manipulator_studio import MODELS, OUT
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset-root', type=Path, required=True)
+    parser.add_argument('--bimanual-root', type=Path)
     args = parser.parse_args()
     rng = np.random.default_rng(20261026)
     results = []
-    for mid, (_, relative, _) in MODELS.items():
+    models={mid:(args.asset_root,relative) for mid,(_,relative,_) in MODELS.items()}
+    if args.bimanual_root:
+        models.update({mid:(args.bimanual_root,mid+'/body/robot.urdf') for mid in ('franka_fr3','kinova_gen3','aloha2','openarm2')})
+    for mid, (asset_root, relative) in models.items():
         # Some vendor collision proxies use MuJoCo's capsule extension. They
         # do not affect FK and are outside this independent parser's schema.
-        xml = ET.parse(args.asset_root / relative)
+        xml = ET.parse(asset_root / relative)
         for link in xml.getroot().findall('link'):
             for collision in link.findall('collision'):
                 link.remove(collision)

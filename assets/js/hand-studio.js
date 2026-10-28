@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 import {createHandInstance, composeAssembly, findNode} from './manipulator-attachments.js?v=62';
-import {createMotionPlan, sampleMotion} from './joint-motion.js?v=62';
+import {createMotionPlan, sampleMotion} from './joint-motion.js?v=69';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '67';
-const posterVersion = '67';
+const studioVersion = '69';
+const posterVersion = '69';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the
   // original renderer held it at zero. Show a bounded response to radial
@@ -339,7 +339,7 @@ async function choose(id){
 function configureEEFSelector(){
   $('mounts').hidden=false;
   const select=$('eef');select.replaceChildren(new Option('None (bare wrists)','none'));
-  for(const [category,label] of [['hand','Human'],['robot','Robot hands'],['ai','AI gen']]){
+  for(const [category,label] of [['hand','Human'],['robot','Robot hands'],['ai','AI Hand']]){
     const group=document.createElement('optgroup');group.label=label;
     for(const record of catalog.filter(row=>row.category===category))group.append(new Option(record.name,record.id));
     select.append(group);

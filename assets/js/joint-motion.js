@@ -27,6 +27,7 @@ export function createMotionPlan(model, start, dependent=()=>false) {
     const size=amplitude(c,c.upper-c.lower,model.category);
     tracks.push({left:c.name,center:clamp(start[c.name],c.lower+size,c.upper-size),amplitude:size});
   }
+  tracks.nativeSamples=model.motion_samples||null;
   return tracks;
 }
 export function sampleMotion(plan,start,elapsedMs){
@@ -35,6 +36,13 @@ export function sampleMotion(plan,start,elapsedMs){
     const value=track.center+track.amplitude*wave;
     q[track.left]=start[track.left]*(1-blend)+value*blend;
     if(track.right)q[track.right]=start[track.right]*(1-blend)+(track.sign*value+track.offset)*blend;
+  }
+  // Sample native arm solutions when mirrored tools require different joint angles.
+  if(plan.nativeSamples){
+    const samples=plan.nativeSamples,phase=(elapsedMs*.00125)%(2*Math.PI);
+    const frame=phase/(2*Math.PI)*(samples.length-1),i=Math.floor(frame),t=frame-i;
+    const a=samples[i],b=samples[Math.min(i+1,samples.length-1)];
+    for(const name of Object.keys(a))q[name]=start[name]*(1-blend)+(a[name]*(1-t)+b[name]*t)*blend;
   }
   return q;
 }
