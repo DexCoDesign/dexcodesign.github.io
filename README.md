@@ -192,3 +192,5 @@ python scripts/export_bimanual_studio.py --project-root /path/to/DexCoDesign
 This adds the four arms without regenerating existing mobile or hand models.
 
 ALOHA replacement EEFs attach to the retained wrist motor face; the removed gripper bracket's 35 mm standoff is excluded. Browser QA checks this flange plane throughout joint motion.
+
+OpenArm 2.0 Home uses a reachable native-joint pose with both wrist axes pointing straight forward. The accompanying robot library uses rigid shoulder and wrist mounting layouts; intrinsic arm and torso dimensions stay unchanged, and task placement is separate.

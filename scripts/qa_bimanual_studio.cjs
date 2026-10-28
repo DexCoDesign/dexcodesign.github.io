@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),out=process.env.QA_OUT||'/private/tmp/bimanual-site-qa';
-const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);return {id:model.id,q:{...current},body:bodyModel.controls.map(c=>c.name),hands:[...mountedHands.values()].map(h=>({side:h.side,id:h.id,matrix:h.sourceRoot.matrixWorld.toArray()})),flanges:model.id==='aloha2'?['left','right'].map(side=>{const face=new THREE.Vector3(.069744,0,0).applyMatrix4(findNode(root,'link__'+side+'_wrist_link').matrixWorld),anchor=findNode(root,bodyModel.hand_mounts[side]).getWorldPosition(new THREE.Vector3());return face.distanceTo(anchor);}):[],base:bodyModel.base_model,mounting:bodyModel.mounting};};`;
+const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);return {id:model.id,q:{...current},body:bodyModel.controls.map(c=>c.name),hands:[...mountedHands.values()].map(h=>({side:h.side,id:h.id,matrix:h.sourceRoot.matrixWorld.toArray(),forward:new THREE.Vector3(...h.profile.distal_axis).transformDirection(h.sourceRoot.matrixWorld).toArray()})),flanges:model.id==='aloha2'?['left','right'].map(side=>{const face=new THREE.Vector3(.069744,0,0).applyMatrix4(findNode(root,'link__'+side+'_wrist_link').matrixWorld),anchor=findNode(root,bodyModel.hand_mounts[side]).getWorldPosition(new THREE.Vector3());return face.distanceTo(anchor);}):[],base:bodyModel.base_model,mounting:bodyModel.mounting};};`;
 (async()=>{
  const motion=await import('data:text/javascript;base64,'+Buffer.from(fs.readFileSync(path.join(root,'assets/js/joint-motion.js'),'utf8')).toString('base64'));const plan=[];plan.nativeSamples=[{joint:0},{joint:1}];if(motion.sampleMotion(plan,{joint:.2},-1).joint!==.2)throw new Error('Negative animation timestamp regression');
  fs.mkdirSync(out,{recursive:true});const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -25,6 +25,7 @@ const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);retu
    if(state.id!==id||state.hands.some(h=>h.id!==selected))throw new Error('EEF did not persist across model change');
    if(state.base.type!=='fixed'||state.base.joints.length||state.body.some(n=>/mobile_base|wheel|lift|mount_flip/.test(n)))throw new Error('Fixed lift exposes base DOF');
    const original=JSON.parse(fs.readFileSync(path.join(root,'assets/models/studio',id+'.json')));for(const [name,q] of Object.entries(original.poses.neutral))if(Math.abs(state.q[name]-q)>1e-8)throw new Error('Native Home changed');
+   if(id==='openarm2'&&state.hands.some(h=>h.forward[0]<.999999))throw new Error('OpenArm Home does not point forward '+JSON.stringify(state.hands));
    let mirror=symmetry(state);
    await page.locator('#studio-eef').selectOption('wuji_hand_2');await ready();selected='wuji_hand_2';symmetry(await page.evaluate(()=>inspectBimanual()));
    await page.getByRole('button',{name:'Slow motion',exact:true}).click();const samples=[];
@@ -36,7 +37,7 @@ const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);retu
    await page.locator('#hand-studio').screenshot({path:path.join(out,id+'-wuji.png')});
    await page.locator('#studio-eef').selectOption('lyra10');await ready();selected='lyra10';symmetry(await page.evaluate(()=>inspectBimanual()));
    await page.locator('#hand-studio').screenshot({path:path.join(out,id+'-lyra.png')});
-   report.push({id,bodyJoints:state.body.length,maxEEFMatrixMirrorError:mirror,nativeHome:true,allBodyJointsMoved:true,realAndAIHands:true});
+   report.push({id,forwardHome:id==='openarm2',bodyJoints:state.body.length,maxEEFMatrixMirrorError:mirror,nativeHome:true,allBodyJointsMoved:true,realAndAIHands:true});
   }
   await page.locator('#studio-eef').selectOption('none');await ready();await page.locator('#studio-model').selectOption('franka_fr3');await ready();if((await page.evaluate(()=>inspectBimanual())).hands.length)throw new Error('Explicit None lost');
   await page.setViewportSize({width:390,height:844});await page.locator('#hand-studio').scrollIntoViewIfNeeded();if(await page.locator('.studio').evaluate(el=>el.getBoundingClientRect().width>innerWidth))throw new Error('Mobile overflow');await page.locator('#hand-studio').screenshot({path:path.join(out,'mobile.png'),style:'nav.site-nav {visibility:hidden}'});
