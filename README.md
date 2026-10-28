@@ -190,3 +190,5 @@ python scripts/export_bimanual_studio.py --project-root /path/to/DexCoDesign
 ```
 
 This adds the four arms without regenerating existing mobile or hand models.
+
+ALOHA replacement EEFs attach to the retained wrist motor face; the removed gripper bracket's 35 mm standoff is excluded. Browser QA checks this flange plane throughout joint motion.

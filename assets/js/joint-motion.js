@@ -31,6 +31,7 @@ export function createMotionPlan(model, start, dependent=()=>false) {
   return tracks;
 }
 export function sampleMotion(plan,start,elapsedMs){
+  elapsedMs=Math.max(0,elapsedMs);
   const q={...start},blend=Math.min(1,elapsedMs/700),wave=Math.sin(elapsedMs*.00125);
   for(const track of plan){
     const value=track.center+track.amplitude*wave;

@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { GLTFLoader } from '../vendor/three/GLTFLoader.js';
 import {createHandInstance, composeAssembly, findNode} from './manipulator-attachments.js?v=62';
-import {createMotionPlan, sampleMotion} from './joint-motion.js?v=69';
+import {createMotionPlan, sampleMotion} from './joint-motion.js?v=70';
 
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
-const studioVersion = '69';
+const studioVersion = '70';
 const posterVersion = '69';
 const visualPassiveResponse = {
   // The KESTREL ulnar arch is a free passive joint (0–26 degrees), so the

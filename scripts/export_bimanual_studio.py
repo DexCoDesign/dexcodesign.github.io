@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Add four fixed-lift arm pairs while preserving each native kinematic chain."""
-import argparse,copy,json,sys,xml.etree.ElementTree as ET
+import argparse,copy,json,sys,subprocess,xml.etree.ElementTree as ET
 from pathlib import Path
 import numpy as np
 from scipy.optimize import least_squares
@@ -13,6 +13,7 @@ MODELS={'franka_fr3':'Franka FR3','kinova_gen3':'Kinova Gen3','aloha2':'ALOHA 2 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=Path,required=True);a=p.parse_args()
     root=a.project_root.resolve();sys.path.insert(0,str(root/'source/dexcodesign'))
+    source_commit=subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'],text=True).strip()
     from dexcodesign.robot_layout.builder import meshless
     from dexcodesign.robot_layout.frames import worlds
     import mujoco,trimesh
@@ -20,7 +21,7 @@ def main():
     reflection=np.diag([1.,-1.,1.]);canonical_mirror=np.diag([-1.,1.,1.])
     for mid,label in MODELS.items():
         base=root/'assets/bimanual_manipulators'/mid;urdf=base/'body/robot.urdf';tree=ET.parse(urdf).getroot();manifest=json.loads((base/'body/manifest.json').read_text());home=json.loads((base/'home.json').read_text());groups=manifest['groups']
-        row=export_one(urdf,mid,label,'manipulator',provenance={'host':'DexCoDesign fixed-lift bimanual library','commit':'22ed597813a25068f97bf474275e3b1f29a3ff76','path':str(urdf.relative_to(root))})
+        row=export_one(urdf,mid,label,'manipulator',provenance={'host':'DexCoDesign fixed-lift bimanual library','commit':source_commit,'path':str(urdf.relative_to(root))})
         mp=OUT/(mid+'.json');meta=json.loads(mp.read_text());frames=worlds(tree,home)
         # Canonical hands mirror in X; the native arm flange axes need not.
         adapters={'left':np.eye(3),'right':frames['right_eef_mount'][:3,:3].T@reflection@frames['left_eef_mount'][:3,:3]@canonical_mirror}

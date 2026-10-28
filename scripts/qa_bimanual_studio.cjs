@@ -2,11 +2,12 @@
 const fs=require('fs'),path=require('path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),out=process.env.QA_OUT||'/private/tmp/bimanual-site-qa';
-const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);return {id:model.id,q:{...current},body:bodyModel.controls.map(c=>c.name),hands:[...mountedHands.values()].map(h=>({side:h.side,id:h.id,matrix:h.sourceRoot.matrixWorld.toArray()})),base:bodyModel.base_model,mounting:bodyModel.mounting};};`;
+const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);return {id:model.id,q:{...current},body:bodyModel.controls.map(c=>c.name),hands:[...mountedHands.values()].map(h=>({side:h.side,id:h.id,matrix:h.sourceRoot.matrixWorld.toArray()})),flanges:model.id==='aloha2'?['left','right'].map(side=>{const face=new THREE.Vector3(.069744,0,0).applyMatrix4(findNode(root,'link__'+side+'_wrist_link').matrixWorld),anchor=findNode(root,bodyModel.hand_mounts[side]).getWorldPosition(new THREE.Vector3());return face.distanceTo(anchor);}):[],base:bodyModel.base_model,mounting:bodyModel.mounting};};`;
 (async()=>{
+ const motion=await import('data:text/javascript;base64,'+Buffer.from(fs.readFileSync(path.join(root,'assets/js/joint-motion.js'),'utf8')).toString('base64'));const plan=[];plan.nativeSamples=[{joint:0},{joint:1}];if(motion.sampleMotion(plan,{joint:.2},-1).joint!==.2)throw new Error('Negative animation timestamp regression');
  fs.mkdirSync(out,{recursive:true});const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
-  const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[],failed=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400&&!r.url().endsWith('favicon.ico'))failed.push(r.url()+' '+r.status());});
+  const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[],failed=[];page.on('pageerror',e=>errors.push(e.stack||e.message));page.on('response',r=>{if(r.status()>=400&&!r.url().endsWith('favicon.ico'))failed.push(r.url()+' '+r.status());});
   await page.route('**/hand-studio.js*',route=>route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(root,'assets/js/hand-studio.js'),'utf8')+probe}));
   await page.goto(process.env.STUDIO_URL||'http://127.0.0.1:8779/#hand-studio');
   const ready=()=>page.waitForFunction(()=>document.querySelector('#studio-loading').hidden,null,{timeout:60000});await ready();await page.locator('#hand-studio').scrollIntoViewIfNeeded();
@@ -15,6 +16,7 @@ const probe=`\nglobalThis.inspectBimanual=()=>{root.updateMatrixWorld(true);retu
   const ids=['franka_fr3','kinova_gen3','aloha2','openarm2'];let selected='lyra10';const report=[];
   function symmetry(state){
    const l=state.hands.find(h=>h.side==='left'),r=state.hands.find(h=>h.side==='right');if(!l||!r)throw new Error('Missing hand');
+   if(state.flanges.some(gap=>gap>2e-6))throw new Error('ALOHA tool does not touch retained wrist face '+state.flanges);
    let maximum=0;for(let c=0;c<4;c++)for(let row=0;row<4;row++){const index=4*c+row;maximum=Math.max(maximum,Math.abs(l.matrix[index]-(row===1?-1:1)*r.matrix[index]));}
    if(maximum>.002)throw new Error('EEF mirror mismatch '+state.id+' '+maximum);return maximum;
   }
