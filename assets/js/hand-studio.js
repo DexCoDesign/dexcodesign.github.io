@@ -7,6 +7,7 @@ import {createMotionPlan, sampleMotion} from './joint-motion.js?v=70';
 const $ = id => document.getElementById('studio-' + id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const basicPoses = ['neutral','spread','wrap','pinch'];
+// Asset revisions are independent of UI releases: a UI fix must not redownload meshes.
 const studioVersion = '71';
 const posterVersion = '71';
 const visualPassiveResponse = {
@@ -22,7 +23,7 @@ const mountedHands = new Map();
 let handGeneration=0, selectedEEF='lyra10';
 let bodyLoading=true, handLoading=false;
 let slow = false, selectedPose = 'neutral', clockStart = 0, dirty = true, visible = true;
-let slowStart = {}, slowPlan = [], previousFrameTime=0;
+let slowStart = {}, slowPlan = [], previousFrameTime=0, frameRequest=0;
 const viewShift = new THREE.Vector2();
 const viewport = $('viewport');
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -57,7 +58,7 @@ orbit.enableDamping = false;
 orbit.enablePan = false;
 orbit.rotateSpeed = .6;
 orbit.zoomSpeed = .75;
-orbit.addEventListener('change',()=>{dirty=true;});
+orbit.addEventListener('change',requestRender);
 // Neutral, symmetric fill: rotating a model never reveals an unlit side.
 scene.add(new THREE.AmbientLight(0xffffff,.65));
 for (const pos of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
@@ -133,8 +134,9 @@ function displayMaterial(material){
   });
 }
 const axisQ = new THREE.Quaternion();
-new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height);resizeView();dirty=true;}).observe(viewport);
-new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;dirty=true;}).observe(viewport);
+new ResizeObserver(()=>{const {width,height}=viewport.getBoundingClientRect();if(!width||!height)return;renderer.setSize(width,height);resizeView();requestRender();}).observe(viewport);
+new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;previousFrameTime=0;requestRender();}).observe(viewport);
+document.addEventListener('visibilitychange',()=>{previousFrameTime=0;if(!document.hidden)requestRender();});
 
 function loading(percent,text='Loading model'){
   const value=clamp(Math.floor(percent),0,100);
@@ -161,9 +163,37 @@ async function getMetadata(record){
   return metadataCache.get(record.id);
 }
 async function getScene(next,token,onProgress=percent=>loading(percent)){
-  if(!sceneCache.has(next.id))sceneCache.set(next.id,loader.loadAsync(`${next.glb}?v=${studioVersion}`,e=>{
-    if(token===generation&&e.total)onProgress(Math.min(99,100*e.loaded/e.total));
-  }).then(gltf=>{
+  let entry=sceneCache.get(next.id);
+  if(entry){sceneCache.delete(next.id);sceneCache.set(next.id,entry);return entry.promise;}
+  entry={controller:new AbortController(),scene:null};
+  sceneCache.set(next.id,entry);
+  entry.promise=(async()=>{
+    const record=catalog.find(record=>record.id===next.id);
+    let compressed=Boolean(record?.compressed_glb&&typeof DecompressionStream==='function');
+    const url=compressed?`${record.compressed_glb}?v=${record.compressed_revision}`:`${next.glb}?v=${studioVersion}`;
+    let response=await fetch(url,{signal:entry.controller.signal});
+    if(compressed&&response.status===404){compressed=false;response=await fetch(`${next.glb}?v=${studioVersion}`,{signal:entry.controller.signal});}
+    if(!response.ok)throw new Error('Model download unavailable');
+    const total=Number(response.headers.get('content-length'))||(compressed?record.compressed_bytes:record?.bytes)||0;
+    let data;
+    if(response.body){
+      const reader=response.body.getReader(),chunks=[];let loaded=0;
+      while(true){
+        const {done,value}=await reader.read();if(done)break;
+        chunks.push(value);loaded+=value.byteLength;
+        if(token===generation&&total)onProgress(Math.min(98,100*loaded/total));
+      }
+      const blob=new Blob(chunks);chunks.length=0;
+      // Some hosts already decode a Content-Encoding layer. Inspect the payload
+      // instead of assuming a .gz URL always needs another decompression pass.
+      const signature=new Uint8Array(await blob.slice(0,2).arrayBuffer());
+      data=compressed&&signature[0]===0x1f&&signature[1]===0x8b?
+        await new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer():await blob.arrayBuffer();
+    }else data=await response.arrayBuffer();
+    entry.controller.signal.throwIfAborted();
+    if(token===generation)onProgress(99);
+    const gltf=await loader.parseAsync(data,new URL('.',new URL(next.glb,document.baseURI)).href);
+    if(entry.controller.signal.aborted){disposeScene(gltf.scene);throw new DOMException('Model selection changed','AbortError');}
     const converted=new Map();
     gltf.scene.traverse(node=>{
       if(!node.isMesh)return;
@@ -177,9 +207,28 @@ async function getScene(next,token,onProgress=percent=>loading(percent)){
       };
       node.material=Array.isArray(node.material)?node.material.map(convert):convert(node.material);
     });
+    entry.scene=gltf.scene;
     return gltf.scene;
-  }).catch(e=>{sceneCache.delete(next.id);throw e;}));
-  return sceneCache.get(next.id);
+  })().catch(error=>{if(sceneCache.get(next.id)===entry)sceneCache.delete(next.id);throw error;});
+  return entry.promise;
+}
+function disposeScene(template){
+  const geometries=new Set(),materials=new Set(),textures=new Set();
+  template.traverse(node=>{if(!node.isMesh)return;geometries.add(node.geometry);for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});
+  for(const material of materials){for(const value of Object.values(material))if(value?.isTexture)textures.add(value);material.dispose();}
+  for(const geometry of geometries)geometry.dispose();
+  for(const texture of textures)texture.dispose();
+}
+function cancelUnusedLoads(keep){
+  for(const [id,entry] of sceneCache)if(!entry.scene&&!keep.has(id)){entry.controller.abort();sceneCache.delete(id);}
+}
+function trimSceneCache(){
+  const keep=new Set([model?.id,...[...mountedHands.values()].map(hand=>hand.id)]);
+  for(const [id,entry] of sceneCache){
+    if(sceneCache.size<=3)break;
+    if(!entry.scene||keep.has(id))continue;
+    sceneCache.delete(id);disposeScene(entry.scene);
+  }
 }
 function values(pose){return Object.fromEntries(model.controls.map(c=>[c.name,clamp(pose[c.name]??0,c.lower,c.upper)]));}
 function fingerOf(control){
@@ -228,7 +277,7 @@ function pose(name){
   if(name==='neutral'&&model.category==='manipulator'){
     camera.up.set(0,0,1);orbit.reset();
   }
-  buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';dirty=true;
+  buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:name==='pinch'?(model.pinch_note||'Pinch preset · kinematic configuration, not a validated grasp.'):'Joint limits enforced · dependent joints follow their masters.';requestRender();
 }
 function buttons(){for(const b of $('actions').querySelectorAll('button'))b.classList.toggle('on',Boolean(b.dataset.pose===selectedPose&&!slow||b.dataset.slow&&slow));}
 function loopDependent(name){
@@ -269,7 +318,7 @@ function buildControls(){
     const row=document.createElement('div');row.className='studio-joint';const label=document.createElement('label'),span=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');
     input.id='studio-joint-'+i;label.htmlFor=input.id;span.textContent=c.label;label.append(span,output);input.type='range';const scale=c.unit==='m'?1000:180/Math.PI;input.min=c.lower*scale;input.max=c.upper*scale;input.step=c.unit==='m'?.1:.5;input.setAttribute('aria-label',c.group+' '+c.label);
     if(loopDependent(c.name)){input.disabled=true;input.title='Follows the PIP joint through the original MIDAS fingertip linkage';}
-    input.addEventListener('input',()=>{slow=false;selectedPose='';target={...current,[c.name]:Number(input.value)/scale};current={...target};apply(current);buttons();dirty=true;});
+    input.addEventListener('input',()=>{slow=false;selectedPose='';target={...current,[c.name]:Number(input.value)/scale};current={...target};apply(current);buttons();requestRender();});
     row.append(label,input);groups.get(c.group).append(row);sliders.set(c.name,{input,output});
   }
   $('actions').replaceChildren();
@@ -277,7 +326,7 @@ function buildControls(){
   if(model.category==='manipulator'&&model.hand_controls){
     for(const [name,text] of [['open','Open hands'],['close','Close hands']]){
       const button=document.createElement('button');button.textContent=text;button.dataset.handPose=name;
-      button.onclick=()=>{slow=false;selectedPose='';target={...current,...model.hand_poses[name]};buttons();dirty=true;};$('actions').append(button);
+      button.onclick=()=>{slow=false;selectedPose='';target={...current,...model.hand_poses[name]};buttons();requestRender();};$('actions').append(button);
     }
   }
   const b=document.createElement('button');b.textContent='Slow motion';b.className='slow';b.dataset.slow='true';b.onclick=()=>{
@@ -285,7 +334,7 @@ function buildControls(){
       slowStart={...current};slowPlan=createMotionPlan(model,slowStart,loopDependent);
       $('status').textContent=model.category==='manipulator'?'All movable joints · paired arms and hands move symmetrically.':'Every independent joint moves; coupled and passive joints follow their source relationships.';
     }else target={...current};
-    slow=!slow;clockStart=performance.now();buttons();dirty=true;
+    slow=!slow;clockStart=performance.now();buttons();requestRender();
   };$('actions').append(b);
   syncLoadingState();
 }
@@ -308,6 +357,7 @@ function countText(next){
 }
 async function choose(id){
   const token=++generation;handGeneration++;bodyLoading=true;handLoading=false;mountedHands.clear();bodyModel=null;bodyJointNodes.clear();$('mounts').hidden=true;slow=false;syncLoadingState();loading(0);$('controls').replaceChildren();$('actions').replaceChildren();$('review-legend').hidden=true;
+  cancelUnusedLoads(new Set([id]));
   try{
     const record=catalog.find(r=>r.id===id);if(!record)throw new Error('Model is not in this collection');
     $('name').textContent=record.name;$('counts').textContent=`${record.counts.active} active · ${record.counts.coupled} coupled · ${record.counts.passive} passive`;
@@ -333,7 +383,7 @@ async function choose(id){
     orbit.target.copy(center);orbit.minDistance=radius*.9;orbit.maxDistance=radius*8;frameView(box,center,direction,radius);orbit.saveState();
     selectedPose='neutral';buttons();$('status').textContent=model.category==='manipulator'?model.preview_note:model.closed_loop_preview?'MIDAS preview: fingertip linkages follow original four-bar closure; training URDF is unchanged.':model.category==='ai'?(model.concept_note||'Hand-only concept · direct-drive actuators · closed motor enclosures.'):'Skynet asset snapshot · visual meshes with original joint kinematics.';
     if(model.category==='manipulator'&&selectedEEF!=='none'){await chooseEEF();if(token!==generation)return;}
-    loading(100);renderer.render(scene,camera);dirty=false;bodyLoading=false;syncLoadingState();
+    loading(100);renderer.render(scene,camera);dirty=false;bodyLoading=false;syncLoadingState();trimSceneCache();
   }catch(error){if(token===generation){$('loading').hidden=false;$('loading-text').textContent='Model could not load · '+error.message;console.error(error);}}
 }
 function configureEEFSelector(){
@@ -350,12 +400,13 @@ function rebuildAttachedPreview(initial={}){
   const previous={...current,...initial};model=composeAssembly(bodyModel,mountedHands.values());joints=new Map(bodyJointNodes);
   for(const hand of mountedHands.values())for(const [name,node] of hand.nodes)joints.set(name,node);
   slow=false;buildControls();current=values(previous);target={...current};apply(current);buttons();
-  $('counts').textContent=countText(model);$('status').textContent=mountedHands.size?'Optional hands attached · move the arm or finger joints to explore.':bodyModel.preview_note;dirty=true;
+  $('counts').textContent=countText(model);$('status').textContent=mountedHands.size?'Optional hands attached · move the arm or finger joints to explore.':bodyModel.preview_note;requestRender();
 }
 async function chooseEEF(){
   selectedEEF=$('eef').value;
   if(!bodyModel)return;
   const id=selectedEEF,bodyToken=generation,token=++handGeneration;
+  cancelUnusedLoads(new Set([bodyModel.id,id]));
   handLoading=true;slow=false;target={...current};buttons();syncLoadingState();
   $('poster').hidden=false;loading(0,'Loading end effector');$('status').textContent='Loading end effector…';
   try{
@@ -384,17 +435,19 @@ async function chooseEEF(){
     if(generation!==bodyToken||token!==handGeneration)return;
     selectedEEF=[...mountedHands.values()][0]?.id||'none';$('eef').value=selectedEEF;$('status').textContent=`End effector could not attach · ${error.message}`;console.error(error);
   }finally{
-    if(generation===bodyToken&&token===handGeneration){handLoading=false;syncLoadingState();}
+    if(generation===bodyToken&&token===handGeneration){handLoading=false;syncLoadingState();trimSceneCache();requestRender();}
   }
 }
 $('eef').onchange=chooseEEF;
 
 function category(preferredId){const records=catalog.filter(r=>r.category===$('category').value);$('model').replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;$('model').append(o);}if(records.length){const record=records.find(r=>r.id===preferredId)||records[0];$('model').value=record.id;choose(record.id);}else{$('loading').hidden=false;$('loading-text').textContent='No models published in this collection yet.';}}
 $('category').onchange=()=>category();$('model').onchange=()=>choose($('model').value);
-function tick(now){requestAnimationFrame(tick);const dt=previousFrameTime?Math.min((now-previousFrameTime)/1000,.25):1/60;previousFrameTime=now;if(!visible||document.hidden||!model||bodyLoading||handLoading)return;const poseBlend=1-Math.exp(-12*dt);let moving=false;
+function requestRender(){dirty=true;if(!frameRequest)frameRequest=requestAnimationFrame(tick);}
+function tick(now){frameRequest=0;const dt=previousFrameTime?Math.min((now-previousFrameTime)/1000,.25):1/60;previousFrameTime=now;if(!visible||document.hidden||!model||bodyLoading||handLoading)return;const poseBlend=1-Math.exp(-12*dt);let moving=false;
   if(slow){current=sampleMotion(slowPlan,slowStart,now-clockStart);moving=true;}
   else{for(const c of model.controls){const delta=target[c.name]-current[c.name];if(Math.abs(delta)>1e-5){current[c.name]+=delta*poseBlend;moving=true;}else current[c.name]=target[c.name];}}
   if(moving){apply(current);dirty=true;}if(dirty){renderer.render(scene,camera);dirty=false;}
+  if(moving)frameRequest=requestAnimationFrame(tick);
 }
-requestAnimationFrame(tick);
-fetch(`assets/models/studio/catalog.json?v=${studioVersion}`).then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();}).then(data=>{catalog=data.records;const params=new URLSearchParams(location.search),requested=catalog.find(r=>r.id===params.get('model')),collection=requested?.category||params.get('collection')||'manipulator';if([...$('category').options].some(o=>o.value===collection))$('category').value=collection;category(requested?.id||($('category').value==='manipulator'?'dexmate_vega':undefined));}).catch(e=>{$('loading-text').textContent=e.message;});
+const initialCatalog=viewport.studioCatalog||fetch('assets/models/studio/catalog.json?v=72').then(r=>{if(!r.ok)throw new Error('Catalog unavailable');return r.json();});
+initialCatalog.then(data=>{catalog=data.records;const params=new URLSearchParams(location.search),requested=catalog.find(r=>r.id===(viewport.dataset.requestedModel||params.get('model'))),collection=requested?.category||params.get('collection')||$('category').value||'manipulator';if([...$('category').options].some(o=>o.value===collection))$('category').value=collection;category(requested?.id||($('category').value==='manipulator'?'dexmate_vega':undefined));}).catch(e=>{$('loading-text').textContent=e.message;});

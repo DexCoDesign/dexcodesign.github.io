@@ -12,7 +12,10 @@
         "passive": 0
       },
       "bytes": 2414252,
-      "metadata": "assets/models/studio/lyra10.json"
+      "metadata": "assets/models/studio/lyra10.json",
+      "compressed_glb": "assets/models/studio/compressed/lyra10.glb.gz",
+      "compressed_bytes": 896944,
+      "compressed_revision": "aec301d673949087"
     },
     {
       "id": "aster20",
@@ -25,7 +28,10 @@
         "passive": 0
       },
       "bytes": 3249624,
-      "metadata": "assets/models/studio/aster20.json"
+      "metadata": "assets/models/studio/aster20.json",
+      "compressed_glb": "assets/models/studio/compressed/aster20.glb.gz",
+      "compressed_bytes": 1281000,
+      "compressed_revision": "2bd5c9a203748749"
     },
     {
       "id": "orion16",
@@ -38,7 +44,10 @@
         "passive": 0
       },
       "bytes": 3000152,
-      "metadata": "assets/models/studio/orion16.json"
+      "metadata": "assets/models/studio/orion16.json",
+      "compressed_glb": "assets/models/studio/compressed/orion16.glb.gz",
+      "compressed_bytes": 1128913,
+      "compressed_revision": "b44b98d8e3248c76"
     },
     {
       "id": "vela12",
@@ -51,7 +60,10 @@
         "passive": 1
       },
       "bytes": 1409612,
-      "metadata": "assets/models/studio/vela12.json"
+      "metadata": "assets/models/studio/vela12.json",
+      "compressed_glb": "assets/models/studio/compressed/vela12.glb.gz",
+      "compressed_bytes": 529327,
+      "compressed_revision": "6bac7fae9cfa6336"
     },
     {
       "id": "sora8",
@@ -64,7 +76,10 @@
         "passive": 4
       },
       "bytes": 2253164,
-      "metadata": "assets/models/studio/sora8.json"
+      "metadata": "assets/models/studio/sora8.json",
+      "compressed_glb": "assets/models/studio/compressed/sora8.glb.gz",
+      "compressed_bytes": 833512,
+      "compressed_revision": "b086b7529310ed35"
     },
     {
       "id": "talon9",
@@ -90,7 +105,10 @@
         "passive": 0
       },
       "bytes": 3124720,
-      "metadata": "assets/models/studio/nacre18.json"
+      "metadata": "assets/models/studio/nacre18.json",
+      "compressed_glb": "assets/models/studio/compressed/nacre18.glb.gz",
+      "compressed_bytes": 1206864,
+      "compressed_revision": "39097b73c44a0d77"
     },
     {
       "id": "helix15",
@@ -103,7 +121,10 @@
         "passive": 0
       },
       "bytes": 1831444,
-      "metadata": "assets/models/studio/helix15.json"
+      "metadata": "assets/models/studio/helix15.json",
+      "compressed_glb": "assets/models/studio/compressed/helix15.glb.gz",
+      "compressed_bytes": 683863,
+      "compressed_revision": "53c5f1bf60eaa681"
     },
     {
       "id": "reed11",
@@ -116,7 +137,10 @@
         "passive": 5
       },
       "bytes": 2815420,
-      "metadata": "assets/models/studio/reed11.json"
+      "metadata": "assets/models/studio/reed11.json",
+      "compressed_glb": "assets/models/studio/compressed/reed11.glb.gz",
+      "compressed_bytes": 1090967,
+      "compressed_revision": "a9742c5e1fdca1e3"
     },
     {
       "id": "kestrel17",
@@ -129,7 +153,10 @@
         "passive": 1
       },
       "bytes": 3424868,
-      "metadata": "assets/models/studio/kestrel17.json"
+      "metadata": "assets/models/studio/kestrel17.json",
+      "compressed_glb": "assets/models/studio/compressed/kestrel17.glb.gz",
+      "compressed_bytes": 1330069,
+      "compressed_revision": "7156fe2a1501d5d5"
     },
     {
       "id": "mano",
@@ -155,7 +182,10 @@
         "passive": 0
       },
       "bytes": 17867600,
-      "metadata": "assets/models/studio/wuji_hand_2.json"
+      "metadata": "assets/models/studio/wuji_hand_2.json",
+      "compressed_glb": "assets/models/studio/compressed/wuji_hand_2.glb.gz",
+      "compressed_bytes": 6157698,
+      "compressed_revision": "a39a5babe104eebb"
     },
     {
       "id": "sharpa_wave_01",
@@ -168,7 +198,10 @@
         "passive": 0
       },
       "bytes": 2619588,
-      "metadata": "assets/models/studio/sharpa_wave_01.json"
+      "metadata": "assets/models/studio/sharpa_wave_01.json",
+      "compressed_glb": "assets/models/studio/compressed/sharpa_wave_01.glb.gz",
+      "compressed_bytes": 1491555,
+      "compressed_revision": "6ab422e554ef5d29"
     },
     {
       "id": "tesollo_dg5f",
@@ -181,7 +214,10 @@
         "passive": 0
       },
       "bytes": 1559064,
-      "metadata": "assets/models/studio/tesollo_dg5f.json"
+      "metadata": "assets/models/studio/tesollo_dg5f.json",
+      "compressed_glb": "assets/models/studio/compressed/tesollo_dg5f.glb.gz",
+      "compressed_bytes": 863505,
+      "compressed_revision": "3f9dd82c0969c1c2"
     },
     {
       "id": "unitree_dex5_1",
@@ -194,7 +230,10 @@
         "passive": 0
       },
       "bytes": 2411616,
-      "metadata": "assets/models/studio/unitree_dex5_1.json"
+      "metadata": "assets/models/studio/unitree_dex5_1.json",
+      "compressed_glb": "assets/models/studio/compressed/unitree_dex5_1.glb.gz",
+      "compressed_bytes": 1254893,
+      "compressed_revision": "393bdf27d95250e9"
     },
     {
       "id": "shadow_hand_e",
@@ -207,7 +246,10 @@
         "passive": 0
       },
       "bytes": 623940,
-      "metadata": "assets/models/studio/shadow_hand_e.json"
+      "metadata": "assets/models/studio/shadow_hand_e.json",
+      "compressed_glb": "assets/models/studio/compressed/shadow_hand_e.glb.gz",
+      "compressed_bytes": 338157,
+      "compressed_revision": "2b6d675be819673a"
     },
     {
       "id": "midas_hand",
@@ -220,7 +262,10 @@
         "passive": 0
       },
       "bytes": 9108364,
-      "metadata": "assets/models/studio/midas_hand.json"
+      "metadata": "assets/models/studio/midas_hand.json",
+      "compressed_glb": "assets/models/studio/compressed/midas_hand.glb.gz",
+      "compressed_bytes": 5240941,
+      "compressed_revision": "1c29c4440e7c0ac0"
     },
     {
       "id": "ruka_v2",
@@ -233,7 +278,10 @@
         "passive": 0
       },
       "bytes": 9061404,
-      "metadata": "assets/models/studio/ruka_v2.json"
+      "metadata": "assets/models/studio/ruka_v2.json",
+      "compressed_glb": "assets/models/studio/compressed/ruka_v2.glb.gz",
+      "compressed_bytes": 5100565,
+      "compressed_revision": "abbfc16a20143612"
     },
     {
       "id": "inspire_rh56dfx",
@@ -246,7 +294,10 @@
         "passive": 0
       },
       "bytes": 1145440,
-      "metadata": "assets/models/studio/inspire_rh56dfx.json"
+      "metadata": "assets/models/studio/inspire_rh56dfx.json",
+      "compressed_glb": "assets/models/studio/compressed/inspire_rh56dfx.glb.gz",
+      "compressed_bytes": 689586,
+      "compressed_revision": "495d48758ae63b0a"
     },
     {
       "id": "robotera_xhand1_pro",
@@ -259,7 +310,10 @@
         "passive": 0
       },
       "bytes": 2386424,
-      "metadata": "assets/models/studio/robotera_xhand1_pro.json"
+      "metadata": "assets/models/studio/robotera_xhand1_pro.json",
+      "compressed_glb": "assets/models/studio/compressed/robotera_xhand1_pro.glb.gz",
+      "compressed_bytes": 1500446,
+      "compressed_revision": "7978f8c6aca57b97"
     },
     {
       "id": "dexmate_vega",
@@ -272,7 +326,10 @@
         "passive": 0
       },
       "bytes": 10032016,
-      "metadata": "assets/models/studio/dexmate_vega.json"
+      "metadata": "assets/models/studio/dexmate_vega.json",
+      "compressed_glb": "assets/models/studio/compressed/dexmate_vega.glb.gz",
+      "compressed_bytes": 5684519,
+      "compressed_revision": "f8de4d6097a991e5"
     },
     {
       "id": "rby1",
@@ -285,7 +342,10 @@
         "passive": 0
       },
       "bytes": 10374084,
-      "metadata": "assets/models/studio/rby1.json"
+      "metadata": "assets/models/studio/rby1.json",
+      "compressed_glb": "assets/models/studio/compressed/rby1.glb.gz",
+      "compressed_bytes": 5301439,
+      "compressed_revision": "dec489957a82f65f"
     },
     {
       "id": "gento_luna",
@@ -298,7 +358,10 @@
         "passive": 0
       },
       "bytes": 15048060,
-      "metadata": "assets/models/studio/gento_luna.json"
+      "metadata": "assets/models/studio/gento_luna.json",
+      "compressed_glb": "assets/models/studio/compressed/gento_luna.glb.gz",
+      "compressed_bytes": 8701205,
+      "compressed_revision": "692c16aa1b5661a3"
     },
     {
       "id": "dyna_taku",
@@ -311,7 +374,10 @@
         "passive": 0
       },
       "bytes": 7462976,
-      "metadata": "assets/models/studio/dyna_taku.json"
+      "metadata": "assets/models/studio/dyna_taku.json",
+      "compressed_glb": "assets/models/studio/compressed/dyna_taku.glb.gz",
+      "compressed_bytes": 4260373,
+      "compressed_revision": "069ce3708be50f30"
     },
     {
       "id": "franka_fr3",
@@ -324,7 +390,10 @@
         "passive": 0
       },
       "bytes": 4683760,
-      "metadata": "assets/models/studio/franka_fr3.json"
+      "metadata": "assets/models/studio/franka_fr3.json",
+      "compressed_glb": "assets/models/studio/compressed/franka_fr3.glb.gz",
+      "compressed_bytes": 2807101,
+      "compressed_revision": "0e35cb54aeba4c75"
     },
     {
       "id": "kinova_gen3",
@@ -337,11 +406,14 @@
         "passive": 0
       },
       "bytes": 2044384,
-      "metadata": "assets/models/studio/kinova_gen3.json"
+      "metadata": "assets/models/studio/kinova_gen3.json",
+      "compressed_glb": "assets/models/studio/compressed/kinova_gen3.glb.gz",
+      "compressed_bytes": 1146986,
+      "compressed_revision": "426c84e3a03b8519"
     },
     {
       "id": "aloha2",
-      "name": "ALOHA 2 \u00b7 dual ViperX",
+      "name": "ALOHA 2 · dual ViperX",
       "category": "manipulator",
       "side": "whole robot",
       "counts": {
@@ -350,7 +422,10 @@
         "passive": 0
       },
       "bytes": 377476,
-      "metadata": "assets/models/studio/aloha2.json"
+      "metadata": "assets/models/studio/aloha2.json",
+      "compressed_glb": "assets/models/studio/compressed/aloha2.glb.gz",
+      "compressed_bytes": 148380,
+      "compressed_revision": "e4837b58b54e86b8"
     },
     {
       "id": "openarm2",
@@ -363,7 +438,10 @@
         "passive": 0
       },
       "bytes": 3604452,
-      "metadata": "assets/models/studio/openarm2.json"
+      "metadata": "assets/models/studio/openarm2.json",
+      "compressed_glb": "assets/models/studio/compressed/openarm2.glb.gz",
+      "compressed_bytes": 1920012,
+      "compressed_revision": "1911b600008ec1a9"
     },
     {
       "id": "supr_female_foot",

@@ -181,6 +181,34 @@ Refresh posters with `POSTER_MODELS=dexmate_vega,rby1,gento_luna,dyna_taku`.
 Open `?collection=manipulator&model=dyna_taku#hand-studio` for the collection.
 The deployed site needs static hosting only.
 
+### Loading and delivery
+
+The first page load fetches only the small model catalog and selected poster.
+Three.js, WebGL and the selected model start when the studio viewport becomes
+visible or the visitor interacts with its controls. Model switching cancels
+obsolete downloads; at most three decoded scenes are retained, and stationary
+or offscreen previews do not run a continuous rendering loop. Lighting, geometry,
+joint behavior and the default Dexmate/LYRA-10 assembly are unchanged.
+
+After exporting or changing display GLBs, regenerate lossless delivery copies:
+
+```sh
+node scripts/compress_studio_models.cjs
+node scripts/compress_studio_models.cjs --check
+```
+
+The builder verifies that every gzip copy decompresses byte-for-byte to its
+original GLB, then records a content revision in the catalog. Originals remain
+available for browsers without decompression support. UI revisions do not
+invalidate unchanged geometry downloads. Deploy the compressed files and catalog
+together. These are static files; no server or runtime build is needed.
+
+Video cards are created only for visited datasets. Thumbnails wait until the
+gallery approaches the viewport; MP4s load only on click, with a single player.
+Playback pauses when the video leaves the viewport or the page is hidden.
+`qa_lazy_loading.cjs` checks first-load requests, compressed and fallback paths,
+deep links, playback, cancellation, bounded caching and idle rendering.
+
 ### Fixed-lift bimanual arms
 
 Franka FR3, Kinova Gen3, ALOHA 2 (dual ViperX), and OpenArm 2.0 use the same fixed lift and 45° mount. The base adds no controls. The final mount has thicker U-cradle walls, a narrow inner housing in the same dark gray, and five upper-rim screw caps per side. Native left/right arm limits, joint frames and Home configurations are retained. Per-flange fixed adapters align the mirrored EEFs; sampled arm IK keeps the tools symmetric during Slow motion without imposing equal joint angles.

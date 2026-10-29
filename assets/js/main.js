@@ -36,6 +36,8 @@ const pendingDatasets = [];
 let activeCard = null;
 let activeFilter = 'taco';
 let galleryResizeFrame = null;
+const renderedDatasets = new Set();
+let galleryVisible = !('IntersectionObserver' in window);
 const thumbnailObserver = 'IntersectionObserver' in window
   ? new IntersectionObserver((entries, observer) => {
       entries.forEach((entry) => {
@@ -106,7 +108,7 @@ const scheduleGalleryHeight = () => {
 };
 
 const queueThumbnail = (thumbnail) => {
-  if (!thumbnail || thumbnail.hasAttribute('src')) return;
+  if (!galleryVisible || !thumbnail || thumbnail.hasAttribute('src')) return;
   if (thumbnailObserver) thumbnailObserver.observe(thumbnail);
   else thumbnail.src = thumbnail.dataset.src;
 };
@@ -118,6 +120,7 @@ const unloadVideo = () => {
   const video = media?.querySelector('video');
 
   if (video) {
+    playbackObserver?.unobserve(video);
     video.pause();
     video.removeAttribute('src');
     video.load();
@@ -146,12 +149,14 @@ const loadVideo = (item, card) => {
   activeCard = card;
   updateStatus();
   video.play().catch(() => {});
+  playbackObserver?.observe(video);
 };
 
-const renderGallery = () => {
-  if (!gallery) return;
+const renderGallery = (dataset) => {
+  if (!gallery || renderedDatasets.has(dataset)) return;
+  renderedDatasets.add(dataset);
 
-  videos.forEach((item) => {
+  videos.filter(item => item.dataset === dataset).forEach((item) => {
     const card = document.createElement('article');
     card.className = 'demo-card';
     card.dataset.dataset = item.dataset;
@@ -189,7 +194,7 @@ const renderGallery = () => {
     gallery.append(card);
   });
 
-  pendingDatasets.forEach((dataset) => {
+  pendingDatasets.filter(item => item === dataset).forEach((dataset) => {
     const card = document.createElement('article');
     card.className = 'dataset-placeholder dataset-placeholder--gallery';
     card.dataset.dataset = dataset;
@@ -207,6 +212,7 @@ const renderGallery = () => {
 };
 
 const applyFilter = () => {
+  renderGallery(activeFilter);
   [...gallery.children].forEach((card) => {
     card.hidden = card.dataset.dataset !== activeFilter;
   });
@@ -228,6 +234,23 @@ filterButtons.forEach((button) => {
   });
 });
 
-renderGallery();
+// Neither an offscreen gallery nor inactive datasets should request media.
+const playbackObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(entries => {
+      entries.forEach(entry => { if (!entry.isIntersecting) entry.target.pause(); });
+    })
+  : null;
+if ('IntersectionObserver' in window && gallery) {
+  new IntersectionObserver(([entry]) => {
+    galleryVisible = entry.isIntersecting;
+    thumbnailObserver?.disconnect();
+    if (galleryVisible) {
+      gallery.querySelectorAll('.demo-card:not([hidden]) .video-thumbnail:not([src])').forEach(queueThumbnail);
+    } else activeCard?.querySelector('video')?.pause();
+  }, {rootMargin: '160px 0px'}).observe(gallery);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) activeCard?.querySelector('video')?.pause();
+});
 applyFilter();
 window.addEventListener('resize', scheduleGalleryHeight, { passive: true });
