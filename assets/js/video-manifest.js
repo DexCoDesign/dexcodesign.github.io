@@ -139,6 +139,7 @@ window.DEXCODESIGN_VIDEOS = [
   { dataset: 'dexcanvas', sample: "Adduction grip \u00b7 Cylinder 7 (077705)", hand: 'Right', file: 'dexcanvas_traj_00077705.mp4' },
   { dataset: 'dexcanvas', sample: "Lateral \u00b7 iPhone (111266)", hand: 'Right', file: 'dexcanvas_traj_00111266.mp4' },
   { dataset: 'dexcanvas', sample: "Lateral \u00b7 Power drill (027836)", hand: 'Right', file: 'dexcanvas_traj_00027836.mp4' },
+  { dataset: 'dexcanvas', sample: "Lateral tripod \u00b7 Cylinder 5 (104460)", hand: 'Right', file: 'dexcanvas_traj_00104460.mp4' },
   { dataset: 'dexcanvas', sample: "Lateral tripod \u00b7 Sphere 1 (093108)", hand: 'Right', file: 'dexcanvas_traj_00093108.mp4' },
   { dataset: 'dexcanvas', sample: "Task 07 \u00b7 Cylinder 3 (010623)", hand: 'Right', file: 'dexcanvas_traj_00010623.mp4' },
   { dataset: 'dexcanvas', sample: "Task 07 \u00b7 Cylinder 7 (003802)", hand: 'Right', file: 'dexcanvas_traj_00003802.mp4' },
