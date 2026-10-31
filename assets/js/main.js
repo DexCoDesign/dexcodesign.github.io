@@ -29,7 +29,8 @@ const datasetNames = {
   oakink2: 'OakInk2',
   arctic: 'ARCTIC',
   supp: 'PenSpin',
-  dexterhand: 'DexterHand'
+  dexterhand: 'DexterHand',
+  dexcanvas: 'DexCanvas'
 };
 const pendingDatasets = [];
 
